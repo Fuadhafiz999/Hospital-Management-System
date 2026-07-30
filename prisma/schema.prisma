@@ -1,0 +1,102 @@
+// ═══════════════════════════════════════════════════════════════════
+//  Hospital Management System — Prisma Schema (SQLite)
+// ═══════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── User ─────────────────────────────────────────────────────────
+//  Local auth user — replaces Supabase auth.users for development.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  fullName     String   @map("full_name")
+  role         String   @default("PATIENT") // PATIENT | DOCTOR | ADMIN
+  phone        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  doctorProfile   Doctor?          @relation("DoctorProfile")
+  patientAppts    Appointment[]    @relation("PatientAppointments")
+  patientRecords  MedicalRecord[]  @relation("PatientRecords")
+
+  @@index([role])
+  @@index([email])
+  @@map("users")
+}
+
+// ─── Doctor ───────────────────────────────────────────────────────
+model Doctor {
+  id              String   @id @default(cuid())
+  userId          String   @unique @map("user_id")
+  specialization  String
+  licenseNumber   String   @map("license_number")
+  fee             Float    @default(0)
+  roomNumber      String?  @map("room_number")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user          User           @relation("DoctorProfile", fields: [userId], references: [id], onDelete: Cascade)
+  appointments  Appointment[]  @relation("DoctorAppointments")
+  medicalRecords MedicalRecord[] @relation("DoctorMedicalRecords")
+
+  @@index([specialization])
+  @@index([userId])
+  @@map("doctors")
+}
+
+// ─── Appointment ──────────────────────────────────────────────────
+model Appointment {
+  id         String   @id @default(cuid())
+  patientId  String   @map("patient_id")
+  doctorId   String   @map("doctor_id")
+  date       String   // ISO date string YYYY-MM-DD
+  timeSlot   String   @map("time_slot") // HH:MM format
+  status     String   @default("PENDING") // PENDING | CONFIRMED | COMPLETED | CANCELLED
+  reason     String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  patient        User            @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  doctor         Doctor          @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
+  medicalRecord  MedicalRecord?
+
+  @@unique([doctorId, date, timeSlot])
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([date])
+  @@index([status])
+  @@index([doctorId, date])
+  @@index([patientId, status])
+  @@map("appointments")
+}
+
+// ─── MedicalRecord ────────────────────────────────────────────────
+model MedicalRecord {
+  id              String   @id @default(cuid())
+  appointmentId   String   @unique @map("appointment_id")
+  patientId       String   @map("patient_id")
+  doctorId        String?  @map("doctor_id")
+  diagnosis       String
+  prescription    String   @default("[]") // JSON string
+  vitalsJson      String   @default("{}") @map("vitals_json")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  appointment  Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  patient      User        @relation("PatientRecords", fields: [patientId], references: [id], onDelete: Cascade)
+  doctor       Doctor?     @relation("DoctorMedicalRecords", fields: [doctorId], references: [id], onDelete: SetNull)
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([createdAt])
+  @@map("medical_records")
+}
