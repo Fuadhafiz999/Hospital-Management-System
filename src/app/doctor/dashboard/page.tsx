@@ -198,7 +198,6 @@ export default function DoctorDashboardPage() {
       const json = await res.json();
 
       if (!res.ok || json.error) {
-        console.error("Failed to update status:", json.error?.message);
         return;
       }
 

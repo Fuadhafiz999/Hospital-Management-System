@@ -146,9 +146,6 @@ export default function PatientDashboardPage() {
         const recRes = await fetch(`/api/medical-records?patientId=${patientId}`);
         const recJson = await recRes.json();
         if (cancelled) return;
-        if (!recRes.ok || recJson.error) {
-          console.error("Failed to load medical records:", recJson.error?.message);
-        }
         setMedicalRecords(recJson.data || []);
       } catch {
         if (!cancelled) setError("Failed to load dashboard data.");

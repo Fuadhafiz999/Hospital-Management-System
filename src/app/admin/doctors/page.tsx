@@ -176,7 +176,6 @@ export default function AdminDoctorsPage() {
       const json = await res.json();
 
       if (!res.ok || json.error) {
-        console.error("Failed to update doctor:", json.error?.message);
         return;
       }
 
@@ -305,8 +304,6 @@ export default function AdminDoctorsPage() {
       });
 
       if (!res.ok) {
-        const json = await res.json();
-        console.error("Failed to delete doctor:", json.error?.message);
         return;
       }
 

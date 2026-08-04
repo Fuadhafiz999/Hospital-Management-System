@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface NavItem {
   label: string;
@@ -36,7 +36,38 @@ export default function Sidebar({
   userAvatar,
 }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<string | null>(
+    userName || null
+  );
+
+  // Load the real signed-in user
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((json) => {
+        if (!cancelled && json.user?.fullName) {
+          setCurrentUser(json.user.fullName);
+        }
+      })
+      .catch(() => {
+        /* ignore */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      /* ignore */
+    }
+    router.push("/auth/login");
+  };
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -105,23 +136,23 @@ export default function Sidebar({
       </div>
 
       {/* User Info */}
-      {userName && (
+      {currentUser && (
         <div className="border-b border-secondary-100 bg-secondary-50/50 px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-sm font-semibold text-white shadow-sm">
               {userAvatar ? (
                 <img
                   src={userAvatar}
-                  alt={userName}
+                  alt={currentUser}
                   className="h-full w-full rounded-full object-cover"
                 />
               ) : (
-                userName.charAt(0).toUpperCase()
+                currentUser.charAt(0).toUpperCase()
               )}
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-semibold text-secondary-900">
-                {userName}
+                {currentUser}
               </span>
               <div className="flex items-center gap-1.5">
                 <span
@@ -192,9 +223,9 @@ export default function Sidebar({
 
       {/* Logout */}
       <div className="border-t border-secondary-200 bg-secondary-50/30 p-3">
-        <Link
-          href="/auth/login"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-secondary-500 transition-all duration-200 hover:bg-danger-50 hover:text-danger-600"
+        <button
+          onClick={handleSignOut}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-secondary-500 transition-all duration-200 hover:bg-danger-50 hover:text-danger-600"
         >
           <svg
             className="h-5 w-5"
@@ -210,7 +241,7 @@ export default function Sidebar({
             />
           </svg>
           Sign Out
-        </Link>
+        </button>
       </div>
     </div>
   );

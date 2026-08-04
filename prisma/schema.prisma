@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
-//  Hospital Management System — Prisma Schema (SQLite)
+//  Hospital Management System — Prisma Schema (PostgreSQL)
 // ═══════════════════════════════════════════════════════════════════
 
 generator client {
@@ -7,8 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
 }
 
 // ─── User ─────────────────────────────────────────────────────────
@@ -23,50 +22,79 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  doctorProfile   Doctor?          @relation("DoctorProfile")
-  patientAppts    Appointment[]    @relation("PatientAppointments")
-  patientRecords  MedicalRecord[]  @relation("PatientRecords")
+  doctorProfile  Doctor?         @relation("DoctorProfile")
+  patientAppts   Appointment[]   @relation("PatientAppointments")
+  patientRecords MedicalRecord[] @relation("PatientRecords")
+  bedAssignments Bed[]           @relation("BedPatient")
+  invoices       Invoice[]       @relation("PatientInvoices")
 
   @@index([role])
   @@index([email])
   @@map("users")
 }
 
+// ─── Department ───────────────────────────────────────────────────
+model Department {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  description   String?
+  headDoctorId  String?  @unique @map("head_doctor_id")
+  location      String?
+  phone         String?
+  icon          String   @default("🏥")
+  color         String   @default("bg-blue-50 text-blue-600")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  headDoctor Doctor?  @relation("DepartmentHead", fields: [headDoctorId], references: [id], onDelete: SetNull)
+  doctors    Doctor[] @relation("DepartmentDoctors")
+  beds       Bed[]
+
+  @@index([headDoctorId])
+  @@map("departments")
+}
+
 // ─── Doctor ───────────────────────────────────────────────────────
 model Doctor {
-  id              String   @id @default(cuid())
-  userId          String   @unique @map("user_id")
-  specialization  String
-  licenseNumber   String   @map("license_number")
-  fee             Float    @default(0)
-  roomNumber      String?  @map("room_number")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(cuid())
+  userId         String   @unique @map("user_id")
+  specialization String
+  licenseNumber  String   @map("license_number")
+  fee            Float    @default(0)
+  roomNumber     String?  @map("room_number")
+  departmentId   String?  @map("department_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  user          User           @relation("DoctorProfile", fields: [userId], references: [id], onDelete: Cascade)
-  appointments  Appointment[]  @relation("DoctorAppointments")
+  user           User            @relation("DoctorProfile", fields: [userId], references: [id], onDelete: Cascade)
+  appointments   Appointment[]   @relation("DoctorAppointments")
   medicalRecords MedicalRecord[] @relation("DoctorMedicalRecords")
+  department     Department?     @relation("DepartmentDoctors", fields: [departmentId], references: [id], onDelete: SetNull)
+  headOf         Department?     @relation("DepartmentHead")
+  bedAssignments Bed[]           @relation("BedDoctor")
 
   @@index([specialization])
   @@index([userId])
+  @@index([departmentId])
   @@map("doctors")
 }
 
 // ─── Appointment ──────────────────────────────────────────────────
 model Appointment {
-  id         String   @id @default(cuid())
-  patientId  String   @map("patient_id")
-  doctorId   String   @map("doctor_id")
-  date       String   // ISO date string YYYY-MM-DD
-  timeSlot   String   @map("time_slot") // HH:MM format
-  status     String   @default("PENDING") // PENDING | CONFIRMED | COMPLETED | CANCELLED
-  reason     String
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(cuid())
+  patientId String   @map("patient_id")
+  doctorId  String   @map("doctor_id")
+  date      String // ISO date string YYYY-MM-DD
+  timeSlot  String   @map("time_slot") // HH:MM format
+  status    String   @default("PENDING") // PENDING | CONFIRMED | COMPLETED | CANCELLED
+  reason    String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  patient        User            @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
-  doctor         Doctor          @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
-  medicalRecord  MedicalRecord?
+  patient       User           @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  doctor        Doctor         @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
+  medicalRecord MedicalRecord?
+  invoice       Invoice?
 
   @@unique([doctorId, date, timeSlot])
   @@index([patientId])
@@ -80,23 +108,70 @@ model Appointment {
 
 // ─── MedicalRecord ────────────────────────────────────────────────
 model MedicalRecord {
-  id              String   @id @default(cuid())
-  appointmentId   String   @unique @map("appointment_id")
-  patientId       String   @map("patient_id")
-  doctorId        String?  @map("doctor_id")
-  diagnosis       String
-  prescription    String   @default("[]") // JSON string
-  vitalsJson      String   @default("{}") @map("vitals_json")
-  notes           String?
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(cuid())
+  appointmentId String   @unique @map("appointment_id")
+  patientId     String   @map("patient_id")
+  doctorId      String?  @map("doctor_id")
+  diagnosis     String
+  prescription  String   @default("[]") // JSON string
+  vitalsJson    String   @default("{}") @map("vitals_json")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  appointment  Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  patient      User        @relation("PatientRecords", fields: [patientId], references: [id], onDelete: Cascade)
-  doctor       Doctor?     @relation("DoctorMedicalRecords", fields: [doctorId], references: [id], onDelete: SetNull)
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  patient     User        @relation("PatientRecords", fields: [patientId], references: [id], onDelete: Cascade)
+  doctor      Doctor?     @relation("DoctorMedicalRecords", fields: [doctorId], references: [id], onDelete: SetNull)
 
   @@index([patientId])
   @@index([doctorId])
   @@index([createdAt])
   @@map("medical_records")
+}
+
+// ─── Bed ──────────────────────────────────────────────────────────
+model Bed {
+  id            String    @id @default(cuid())
+  number        String    @unique
+  ward          String // e.g. "Ward A", "ICU", "Private Rooms", "Maternity Ward"
+  departmentId  String?   @map("department_id")
+  status        String    @default("available") // available | occupied | maintenance
+  patientId     String?   @map("patient_id")
+  doctorId      String?   @map("doctor_id")
+  admittedSince DateTime? @map("admitted_since")
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  patient    User?       @relation("BedPatient", fields: [patientId], references: [id], onDelete: SetNull)
+  doctor     Doctor?     @relation("BedDoctor", fields: [doctorId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([ward])
+  @@index([departmentId])
+  @@map("beds")
+}
+
+// ─── Invoice ──────────────────────────────────────────────────────
+model Invoice {
+  id            String    @id @default(cuid())
+  invoiceNumber String    @unique
+  patientId     String    @map("patient_id")
+  appointmentId String?   @unique @map("appointment_id")
+  description   String
+  amount        Float
+  status        String    @default("pending") // pending | paid | overdue
+  method        String?
+  dueDate       DateTime? @map("due_date")
+  paidAt        DateTime? @map("paid_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  patient     User         @relation("PatientInvoices", fields: [patientId], references: [id], onDelete: Cascade)
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([patientId])
+  @@index([status])
+  @@map("invoices")
 }

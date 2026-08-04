@@ -13,6 +13,8 @@ import {
   serverErrorResponse,
 } from "@/lib/api-validate";
 
+export const dynamic = "force-dynamic";
+
 // ─── GET ──────────────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
   try {

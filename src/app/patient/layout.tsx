@@ -1,15 +1,18 @@
 import React from "react";
 import PatientSidebar from "./PatientSidebar";
+import { requireRole } from "@/lib/auth-guard";
 
 export const metadata = {
   title: "Patient Dashboard",
 };
 
-export default function PatientLayout({
+export default async function PatientLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await requireRole(["PATIENT"]);
+
   return (
     <div className="flex min-h-screen">
       <PatientSidebar />

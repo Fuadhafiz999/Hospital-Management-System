@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   title: string;
@@ -25,6 +26,44 @@ export default function Header({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
+  const [realUser, setRealUser] = useState<{
+    fullName?: string;
+    role?: string;
+  } | null>(null);
+  const router = useRouter();
+
+  // Load the real signed-in user when props are not provided
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((json) => {
+        if (!cancelled && json.user) {
+          setRealUser({
+            fullName: json.user.fullName,
+            role: json.user.role,
+          });
+        }
+      })
+      .catch(() => {
+        /* ignore */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const displayName = realUser?.fullName || userName;
+  const displayRole = realUser?.role || userRole;
+
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      /* ignore */
+    }
+    router.push("/auth/login");
+  };
   const notificationRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -330,7 +369,7 @@ export default function Header({
           </div>
 
           {/* User Avatar / Menu */}
-          {(userName || userRole) && (
+          {(displayName || displayRole) && (
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => {
@@ -342,14 +381,14 @@ export default function Header({
                 aria-expanded={showUserMenu}
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-sm font-semibold text-white shadow-sm">
-                  {userName ? userName.charAt(0).toUpperCase() : "U"}
+                  {displayName ? displayName.charAt(0).toUpperCase() : "U"}
                 </div>
                 <div className="hidden text-left lg:block">
                   <p className="text-sm font-medium leading-tight text-secondary-900">
-                    {userName || "User"}
+                    {displayName || "User"}
                   </p>
                   <p className="text-[11px] capitalize leading-tight text-secondary-500">
-                    {userRole || "user"}
+                    {displayRole || "user"}
                   </p>
                 </div>
                 <svg
@@ -374,10 +413,10 @@ export default function Header({
                 <div className="absolute right-0 top-full mt-2 w-56 origin-top-right rounded-xl border border-secondary-200 bg-white shadow-lg ring-1 ring-black/5 transition-all duration-200">
                   <div className="border-b border-secondary-100 px-4 py-3">
                     <p className="text-sm font-medium text-secondary-900">
-                      {userName || "User"}
+                      {displayName || "User"}
                     </p>
                     <p className="text-xs text-secondary-500">
-                      {userRole || "role"} · Online
+                      {displayRole || "role"} · Online
                     </p>
                   </div>
                   <div className="p-1.5">
@@ -443,7 +482,10 @@ export default function Header({
                     ))}
                   </div>
                   <div className="border-t border-secondary-100 p-1.5">
-                    <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-danger-600 transition-colors duration-150 hover:bg-danger-50">
+                    <button
+                      onClick={handleSignOut}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-danger-600 transition-colors duration-150 hover:bg-danger-50"
+                    >
                       <svg
                         className="h-4 w-4"
                         fill="none"
