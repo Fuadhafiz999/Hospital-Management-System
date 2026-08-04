@@ -11,7 +11,12 @@
     "test:routes:ui": "npx playwright test --headed",
     "db:migrate": "npx prisma migrate dev --name init",
     "db:seed": "npx prisma db seed",
-    "db:reset": "npx prisma migrate reset --force"
+    "db:reset": "npx prisma migrate reset --force",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.5.7",
