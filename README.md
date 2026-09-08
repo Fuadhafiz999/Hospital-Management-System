@@ -550,3 +550,4 @@ This project was developed as a diploma final project.
 **Built with Next.js, Prisma, PostgreSQL, and Tailwind CSS**
 #   u p d a t e d - h o s p i t r a c k  
  # updated-hospitrack
+# updated-hospitrack
