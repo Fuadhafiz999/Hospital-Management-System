@@ -17,6 +17,24 @@ interface Patient {
   last_visit: string | null;
 }
 
+interface MedicalRecord {
+  id: string;
+  diagnosis: string | null;
+  notes: string | null;
+  created_at: string;
+  doctor?: {
+    profiles?: {
+      full_name: string;
+    } | null;
+  } | null;
+  appointment?: {
+    date: string | null;
+    time_slot: string | null;
+    status: string | null;
+    reason: string | null;
+  } | null;
+}
+
 function initials(name: string) {
   return name
     .split(" ")
@@ -56,6 +74,60 @@ export default function AdminPatientsPage() {
   }>({});
   const [patientError, setPatientError] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+
+  // ─── Patient history modal state ───────────────────────────────
+  const [historyPatient, setHistoryPatient] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [historyRecords, setHistoryRecords] = useState<MedicalRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyHasMore, setHistoryHasMore] = useState(false);
+  const HISTORY_PAGE_SIZE = 20;
+
+  const openPatientHistory = (patientId: string, patientName: string) => {
+    setHistoryPatient({ id: patientId, name: patientName });
+    setHistoryPage(1);
+    setHistoryRecords([]);
+    setHistoryError(null);
+    loadHistoryRecords();
+  };
+
+  const loadHistoryRecords = () => {
+    if (!historyPatient) return;
+    let cancelled = false;
+    setHistoryLoading(true);
+    fetch(
+      `/api/medical-records?patientId=${encodeURIComponent(historyPatient.id)}&page=${historyPage}&pageSize=${HISTORY_PAGE_SIZE}`
+    )
+      .then((res) => res.json())
+      .then((json) => {
+        if (cancelled) return;
+        if (json.error) {
+          setHistoryError(json.error.message || "Failed to load patient history.");
+          setHistoryRecords([]);
+          setHistoryHasMore(false);
+        } else {
+          setHistoryRecords(json.data || []);
+          setHistoryHasMore(!
+            json
+              ? false
+              : json.data && json.data.length >= (json.pageSize || HISTORY_PAGE_SIZE)
+          );
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setHistoryError("Failed to load patient history.");
+      })
+      .finally(() => {
+        if (!cancelled) setHistoryLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  };
 
   const loadPatients = () => {
     let cancelled = false;
@@ -145,6 +217,8 @@ export default function AdminPatientsPage() {
       p.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  useEffect(() => loadHistoryRecords(), [historyPatient?.id, historyPage]);
+
   const activeCount = patients.filter((p) => p.last_visit).length;
 
   return (
@@ -154,7 +228,7 @@ export default function AdminPatientsPage() {
         subtitle={`${patients.length} registered patients`}
         userName="Admin"
         userRole="admin"
-        showSearch={false}
+        showSearch={true}
       />
 
       <div className="page-container space-y-6">
@@ -238,6 +312,7 @@ export default function AdminPatientsPage() {
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-secondary-500">Phone</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-secondary-500">Last Visit</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-secondary-500">Joined</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-secondary-500">History</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-secondary-100">
@@ -255,6 +330,15 @@ export default function AdminPatientsPage() {
                       <td className="px-6 py-4 text-sm text-secondary-600">{patient.phone || "—"}</td>
                       <td className="px-6 py-4 text-sm text-secondary-600">{formatDate(patient.last_visit)}</td>
                       <td className="px-6 py-4 text-sm text-secondary-400">{formatDate(patient.created_at.split("T")[0])}</td>
+                      <td className="px-6 py-4">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => openPatientHistory(patient.id, patient.name)}
+                        >
+                          View History
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                   {filtered.length === 0 && (
@@ -393,6 +477,141 @@ export default function AdminPatientsPage() {
         </div>
       )}
 
+      {/* ══════════════════════════════════════════════════════════
+          Patient History Modal
+         ═══════════════════════════════════════════════════════════ */}
+      {historyPatient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setHistoryPatient(null)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="patient-history-title"
+            className="relative z-10 mx-4 w-full max-w-2xl rounded-2xl border border-secondary-200 bg-white shadow-2xl"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-secondary-200 px-6 py-4">
+              <div>
+                <h3 id="patient-history-title" className="text-lg font-semibold text-secondary-900">
+                  Medical History — {historyPatient.name}
+                </h3>
+                <p className="mt-0.5 text-sm text-secondary-500">
+                  Records are listed newest first.
+                </p>
+              </div>
+              <button
+                onClick={() => setHistoryPatient(null)}
+                className="rounded-lg p-1.5 text-secondary-400 transition-colors hover:bg-secondary-100 hover:text-secondary-600"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="space-y-5 px-6 py-5">
+              {historyError && (
+                <div className="flex items-start gap-3 rounded-lg border border-danger-200 bg-danger-50 p-4">
+                  <svg className="mt-0.5 h-5 w-5 shrink-0 text-danger-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                  </svg>
+                  <p className="text-sm text-danger-700">{historyError}</p>
+                </div>
+              )}
+
+              {historyLoading && historyRecords.length === 0 ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="h-20 animate-pulse rounded-xl bg-secondary-100" />
+                  ))}
+                </div>
+              ) : historyRecords.length === 0 ? (
+                <div className="rounded-xl border border-secondary-200 bg-secondary-50 p-6 text-center text-sm text-secondary-600">
+                  No medical records found for this patient.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {historyRecords.map((record) => (
+                    <Card key={record.id}>
+                      <CardContent>
+                        <div className="flex flex-col gap-3">
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <span className="font-semibold text-secondary-900">
+                              {formatDate(record.created_at)}
+                            </span>
+                            {record.appointment?.status && (
+                              <span className="rounded-full bg-secondary-100 px-2 py-0.5 text-xs text-secondary-600">
+                                {record.appointment.status}
+                              </span>
+                            )}
+                            {record.doctor?.profiles?.full_name && (
+                              <span className="text-xs text-secondary-500">
+                                Attending: {record.doctor.profiles.full_name}
+                              </span>
+                            )}
+                          </div>
+
+                          {record.appointment && (
+                            <div className="rounded-lg bg-secondary-50 p-3 text-sm text-secondary-700">
+                              <p className="font-medium text-secondary-900">Appointment</p>
+                              <p className="mt-1 text-secondary-600">
+                                {formatDate(record.appointment.date)} · {record.appointment.time_slot || "—"}
+                              </p>
+                              {record.appointment.reason && (
+                                <p className="mt-1 text-secondary-600">Reason: {record.appointment.reason}</p>
+                              )}
+                            </div>
+                          )}
+
+                          {record.diagnosis && (
+                            <p className="text-sm text-secondary-700">
+                              <span className="font-medium">Diagnosis</span>
+
+                              <span className="mt-1 block text-secondary-600">{record.diagnosis}</span>
+                            </p>
+                          )}
+
+                          {record.notes && (
+                            <p className="text-sm text-secondary-700">
+                              <span className="font-medium">Notes</span>
+
+                              <span className="mt-1 block text-secondary-600">{record.notes}</span>
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {historyHasMore && (
+                    <div className="flex justify-center pt-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => setHistoryPage((page) => page + 1)}
+                        disabled={historyLoading}
+                      >
+                        Load More
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 border-t border-secondary-200 px-6 py-4">
+              <Button variant="secondary" onClick={() => setHistoryPatient(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Escape-to-close for add-patient modal */}
       {showAddModal && (
         <EscapeCloseModal
@@ -420,3 +639,4 @@ function EscapeCloseModal({
   }, [disabled, onClose]);
   return null;
 }
+

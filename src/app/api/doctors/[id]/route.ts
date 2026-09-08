@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { serverErrorResponse } from "@/lib/api-validate";
 
 // ─── DELETE ───────────────────────────────────────────────────────
 export async function DELETE(
@@ -17,7 +18,7 @@ export async function DELETE(
     const doctor = await prisma.doctor.findUnique({ where: { id } });
     if (!doctor) {
       return NextResponse.json(
-        { error: { message: "Doctor not found" } },
+        { data: null, error: { message: "Doctor not found" } },
         { status: 404 }
       );
     }
@@ -26,7 +27,6 @@ export async function DELETE(
 
     return NextResponse.json({ data: { id }, error: null });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to delete doctor";
-    return NextResponse.json({ error: { message } }, { status: 500 });
+    return serverErrorResponse(err);
   }
 }

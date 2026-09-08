@@ -8,17 +8,19 @@ export async function POST(request: NextRequest) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { data: null, error: { message: "Email and password are required" } },
         { status: 400 }
       );
     }
 
-    // Find user by email
-    const user = await prisma.user.findUnique({ where: { email } });
+    // Find user by email (normalized: lowercase + trim, matching
+    // how emails are stored at registration)
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
     if (!user) {
       return NextResponse.json(
-        { error: "Invalid login credentials" },
+        { data: null, error: { message: "Invalid login credentials" } },
         { status: 401 }
       );
     }
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
     const isValid = await verifyPassword(password, user.passwordHash);
     if (!isValid) {
       return NextResponse.json(
-        { error: "Invalid login credentials" },
+        { data: null, error: { message: "Invalid login credentials" } },
         { status: 401 }
       );
     }
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred. Please try again." },
+      { data: null, error: { message: "An unexpected error occurred. Please try again." } },
       { status: 500 }
     );
   }

@@ -8,30 +8,41 @@ export async function POST(request: NextRequest) {
 
     if (!email || !password || !fullName || !role) {
       return NextResponse.json(
-        { error: "Email, password, full name, and role are required" },
+        { data: null, error: { message: "Email, password, full name, and role are required" } },
         { status: 400 }
       );
     }
 
-    if (!["PATIENT", "DOCTOR"].includes(role)) {
+    // Validate email format server-side
+    const normalizedEmail = String(email).toLowerCase().trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       return NextResponse.json(
-        { error: "Role must be PATIENT or DOCTOR" },
+        { data: null, error: { message: "Please enter a valid email address" } },
         { status: 400 }
+      );
+    }
+
+    // Doctor accounts are provisioned exclusively by the admin
+    // (Admin → Create Doctor). Public signup is patients-only.
+    if (role !== "PATIENT") {
+      return NextResponse.json(
+        { data: null, error: { message: "Public registration is for patients only. Doctor accounts are created by the hospital administrator." } },
+        { status: 403 }
       );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
+        { data: null, error: { message: "Password must be at least 6 characters" } },
         { status: 400 }
       );
     }
 
     // Check if email already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existingUser) {
       return NextResponse.json(
-        { error: "An account with this email already exists" },
+        { data: null, error: { message: "An account with this email already exists" } },
         { status: 409 }
       );
     }
@@ -41,26 +52,13 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         passwordHash,
         fullName,
         role,
         phone: phone || null,
       },
     });
-
-    // If doctor role, create a doctor record
-    if (role === "DOCTOR") {
-      await prisma.doctor.create({
-        data: {
-          userId: user.id,
-          specialization: "General",
-          licenseNumber: `PENDING-${crypto.randomUUID()}`,
-          fee: 0,
-          roomNumber: null,
-        },
-      });
-    }
 
     return NextResponse.json(
       {
@@ -77,7 +75,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Registration error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred. Please try again." },
+      { data: null, error: { message: "An unexpected error occurred. Please try again." } },
       { status: 500 }
     );
   }

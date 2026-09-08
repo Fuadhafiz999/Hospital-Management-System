@@ -15,6 +15,7 @@ interface Appointment {
   time_slot: string;
   status: string;
   reason: string;
+  created_at: string;
   doctor: {
     profiles: { full_name: string };
   } | null;
@@ -34,9 +35,13 @@ export default function AdminAppointmentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ─── Data for booking modal ────────────────────────────────────
+  // ─── Data for booking/assign modals ────────────────────────────
   const [patients, setPatients] = useState<{ id: string; name: string }[]>([]);
   const [doctors, setDoctors] = useState<{ id: string; name: string; spec: string }[]>([]);
+
+  // ─── Assign doctor modal state ─────────────────────────────────
+  const [assignAppointment, setAssignAppointment] = useState<Appointment | null>(null);
+  const [assignDoctorId, setAssignDoctorId] = useState("");
 
   // ─── Book appointment modal state ──────────────────────────────
   const [showBookModal, setShowBookModal] = useState(false);
@@ -84,6 +89,12 @@ export default function AdminAppointmentsPage() {
       cancelled = true;
     };
   };
+
+  // Load appointments on mount
+  useEffect(() => {
+    const cleanup = loadAppointments();
+    return cleanup;
+  }, []);
 
   // Load patients & doctors for booking modal
   useEffect(() => {
@@ -134,6 +145,32 @@ export default function AdminAppointmentsPage() {
       );
     } catch {
       showError("Update failed", "Please try again");
+    }
+  };
+
+  const assignDoctor = async () => {
+    if (!assignAppointment || !assignDoctorId) return;
+    try {
+      const res = await fetch("/api/appointments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: assignAppointment.id, doctor_id: assignDoctorId }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        showError("Assign failed", json.error?.message);
+        return;
+      }
+      showSuccess("Doctor assigned");
+      setAppointments((prev) =>
+        prev.map((a) =>
+          a.id === assignAppointment.id ? { ...a, doctor_id: assignDoctorId } : a
+        )
+      );
+      setAssignAppointment(null);
+      setAssignDoctorId("");
+    } catch {
+      showError("Assign failed", "Please try again");
     }
   };
 
@@ -221,6 +258,7 @@ export default function AdminAppointmentsPage() {
           <Card><CardContent><p className="text-xs text-success-600">Confirmed</p><p className="text-xl font-bold text-secondary-900">{countByStatus("CONFIRMED")}</p></CardContent></Card>
           <Card><CardContent><p className="text-xs text-warning-600">Pending</p><p className="text-xl font-bold text-secondary-900">{countByStatus("PENDING")}</p></CardContent></Card>
           <Card><CardContent><p className="text-xs text-blue-600">Completed</p><p className="text-xl font-bold text-secondary-900">{countByStatus("COMPLETED")}</p></CardContent></Card>
+          <Card><CardContent><p className="text-xs text-danger-600">Cancelled</p><p className="text-xl font-bold text-secondary-900">{countByStatus("CANCELLED")}</p></CardContent></Card>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -278,8 +316,16 @@ export default function AdminAppointmentsPage() {
                       <td className="px-6 py-4">
                         {apt.status === "PENDING" && (
                           <button
+                            onClick={() => setAssignAppointment(apt)}
+                            className="rounded-md bg-primary-500 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-primary-700 mr-1"
+                          >
+                            Assign Doctor
+                          </button>
+                        )}
+                        {apt.status === "PENDING" && (
+                          <button
                             onClick={() => updateStatus(apt.id, "CONFIRMED")}
-                            className="rounded-md bg-success-500 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-success-700"
+                            className="rounded-md bg-success-500 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-success-700 mr-1"
                           >
                             Confirm
                           </button>
@@ -295,7 +341,7 @@ export default function AdminAppointmentsPage() {
                         {(apt.status === "PENDING" || apt.status === "CONFIRMED") && (
                           <button
                             onClick={() => updateStatus(apt.id, "CANCELLED")}
-                            className="ml-2 rounded-md bg-secondary-200 px-2.5 py-1 text-xs font-semibold text-secondary-700 transition-colors hover:bg-secondary-300"
+                            className="rounded-md bg-secondary-200 px-2.5 py-1 text-xs font-semibold text-secondary-700 transition-colors hover:bg-secondary-300"
                           >
                             Cancel
                           </button>
@@ -494,6 +540,75 @@ export default function AdminAppointmentsPage() {
           disabled={isBooking}
           onClose={() => setShowBookModal(false)}
         />
+      )}
+
+      {/* Assign Doctor Modal */}
+      {assignAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setAssignAppointment(null)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="assign-doc-title"
+            className="relative z-10 mx-4 w-full max-w-lg rounded-2xl border border-secondary-200 bg-white shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-secondary-200 px-6 py-4">
+              <div>
+                <h3 id="assign-doc-title" className="text-lg font-semibold text-secondary-900">Assign Doctor</h3>
+                <p className="mt-0.5 text-sm text-secondary-500">
+                  Reassign this appointment to a different doctor
+                </p>
+              </div>
+              <button
+                onClick={() => setAssignAppointment(null)}
+                className="rounded-lg p-1.5 text-secondary-400 transition-colors hover:bg-secondary-100 hover:text-secondary-600"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-5 px-6 py-5">
+              <div>
+                <p className="text-sm font-medium text-secondary-700">
+                  Patient: <span className="font-semibold text-secondary-900">{assignAppointment.patient?.full_name}</span>
+                </p>
+                <p className="mt-1 text-sm text-secondary-500">
+                  Date: {assignAppointment.date} at {assignAppointment.time_slot}
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-secondary-700">Assign To Doctor</label>
+                <select
+                  value={assignDoctorId}
+                  onChange={(e) => setAssignDoctorId(e.target.value)}
+                  className={`block w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-secondary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0 ${
+                    assignDoctorId ? "border-primary-500 focus:border-primary-500 focus:ring-primary-500/20" : "border-secondary-300 focus:border-primary-500 focus:ring-primary-500/20"
+                  }`}
+                >
+                  <option value="">-- Select doctor --</option>
+                  {doctors.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name} — {d.spec}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-secondary-200 px-6 py-4">
+              <Button variant="secondary" onClick={() => setAssignAppointment(null)}>
+                Cancel
+              </Button>
+              <Button onClick={assignDoctor} disabled={!assignDoctorId}>
+                Assign Doctor
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

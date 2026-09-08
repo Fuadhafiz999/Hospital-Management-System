@@ -122,6 +122,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Reject impossible calendar dates (e.g. 2030-02-31)
+    const parsedDate = new Date(`${date as string}T00:00:00Z`);
+    if (
+      isNaN(parsedDate.getTime()) ||
+      parsedDate.toISOString().split("T")[0] !== date
+    ) {
+      return NextResponse.json(
+        { data: null, error: { message: "Date is not a valid calendar date" } },
+        { status: 400 }
+      );
+    }
+
     // Check for duplicate booking
     const existing = await prisma.appointment.findUnique({
       where: {
@@ -137,6 +149,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { data: null, error: { message: "This time slot is already booked. Please choose another." } },
         { status: 409 }
+      );
+    }
+
+    // Validate referenced records exist so bad IDs produce a friendly
+    // 400/404 instead of a raw Prisma 500
+    const [doctor, patient] = await Promise.all([
+      prisma.doctor.findUnique({ where: { id: doctor_id as string } }),
+      prisma.user.findUnique({ where: { id: patient_id as string } }),
+    ]);
+    if (!doctor) {
+      return NextResponse.json(
+        { data: null, error: { message: "Doctor not found" } },
+        { status: 404 }
+      );
+    }
+    if (!patient) {
+      return NextResponse.json(
+        { data: null, error: { message: "Patient not found" } },
+        { status: 404 }
       );
     }
 
@@ -188,17 +219,18 @@ export async function PATCH(request: NextRequest) {
         field: "status",
         label: "Status",
         type: "string",
-        required: true,
+        required: false,
         pattern: /^(PENDING|CONFIRMED|COMPLETED|CANCELLED)$/,
         message: "Status must be one of: PENDING, CONFIRMED, COMPLETED, CANCELLED",
       },
+      { field: "doctor_id", label: "Doctor", type: "string", required: false },
     ]);
 
     if (!validation.valid) {
       return validationErrorResponse(validation.errors);
     }
 
-    const { id, status } = validation.data;
+    const { id, status, doctor_id } = validation.data;
 
     // Verify appointment exists
     const existing = await prisma.appointment.findUnique({ where: { id: id as string } });
@@ -209,9 +241,51 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // Build update data
+    const updateData: Record<string, unknown> = {};
+    if (status) {
+      // Enforce legal status transitions (state machine)
+      const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+        PENDING: ["CONFIRMED", "CANCELLED"],
+        CONFIRMED: ["COMPLETED", "CANCELLED"],
+        COMPLETED: [],
+        CANCELLED: [],
+      };
+      if (!(ALLOWED_TRANSITIONS[existing.status] || []).includes(status as string)) {
+        return NextResponse.json(
+          {
+            data: null,
+            error: {
+              message: `Cannot change status from ${existing.status} to ${status}`,
+            },
+          },
+          { status: 400 }
+        );
+      }
+      updateData.status = status;
+    }
+    if (doctor_id) {
+      // Verify doctor exists
+      const doctor = await prisma.doctor.findUnique({ where: { id: doctor_id as string } });
+      if (!doctor) {
+        return NextResponse.json(
+          { data: null, error: { message: "Doctor not found" } },
+          { status: 404 }
+        );
+      }
+      updateData.doctorId = doctor_id;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { data: null, error: { message: "No fields to update" } },
+        { status: 400 }
+      );
+    }
+
     const updated = await prisma.appointment.update({
       where: { id: id as string },
-      data: { status: status as string },
+      data: updateData,
       include: { doctor: { include: { user: true } }, patient: true },
     });
 

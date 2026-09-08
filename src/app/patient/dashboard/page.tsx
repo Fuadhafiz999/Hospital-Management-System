@@ -226,8 +226,6 @@ export default function PatientDashboardPage() {
         <Header
           title="Dashboard"
           subtitle="Loading your health information..."
-          userName="Patient"
-          userRole="patient"
           showSearch={false}
         />
         <div className="page-container animate-pulse space-y-6">
@@ -252,8 +250,6 @@ export default function PatientDashboardPage() {
         <Header
           title="Dashboard"
           subtitle="Something went wrong"
-          userName="Patient"
-          userRole="patient"
           showSearch={false}
         />
         <div className="page-container">
@@ -295,9 +291,7 @@ export default function PatientDashboardPage() {
       <Header
         title="Patient Dashboard"
         subtitle="Your health at a glance"
-        userName="Patient"
-        userRole="patient"
-        showSearch={false}
+        showSearch={true}
       />
 
       <div className="page-container space-y-6">

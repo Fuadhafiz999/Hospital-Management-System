@@ -62,7 +62,14 @@ export async function POST(request: NextRequest) {
       { field: "description", label: "Description", type: "string", required: true, minLength: 2 },
       { field: "amount", label: "Amount", type: "number", required: true, min: 0 },
       { field: "appointment_id", label: "Appointment", type: "string", required: false },
-      { field: "status", label: "Status", type: "string", required: false },
+      {
+        field: "status",
+        label: "Status",
+        type: "string",
+        required: false,
+        pattern: /^(pending|paid|overdue)$/,
+        message: "Status must be pending, paid, or overdue",
+      },
       { field: "method", label: "Method", type: "string", required: false },
     ]);
 

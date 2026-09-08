@@ -6,12 +6,34 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyToken, AUTH_COOKIE_NAME } from "./auth-utils";
+import prisma from "./prisma";
 
 export interface CurrentUser {
   id: string;
   email: string;
   fullName: string;
   role: string;
+}
+
+/**
+ * Fetch the full user record from the database given a JWT payload.
+ */
+async function fetchUserFromDb(userId: string): Promise<CurrentUser | null> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, fullName: true, role: true },
+    });
+    if (!user) return null;
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -31,12 +53,12 @@ export async function requireRole(roles: string[]): Promise<CurrentUser> {
     redirect("/auth/login");
   }
 
-  return {
-    id: payload.userId,
-    email: payload.email,
-    fullName: payload.email,
-    role: payload.role,
-  };
+  const user = await fetchUserFromDb(payload.userId);
+  if (!user) {
+    redirect("/auth/login");
+  }
+
+  return user;
 }
 
 /**
@@ -51,10 +73,5 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const payload = verifyToken(token);
   if (!payload) return null;
 
-  return {
-    id: payload.userId,
-    email: payload.email,
-    fullName: payload.email,
-    role: payload.role,
-  };
+  return fetchUserFromDb(payload.userId);
 }

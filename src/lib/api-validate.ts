@@ -43,9 +43,11 @@ export function validateBody(
       continue;
     }
 
-    // Skip further validation if not required and value is empty
+    // Skip further validation if not required and value is empty.
+    // Empty string is treated as "not provided" so pattern/enum rules
+    // cannot be bypassed by sending "" (previously stored invalid
+    // empty statuses in the DB).
     if (value === undefined || value === null || value === "") {
-      data[rule.field] = value;
       continue;
     }
 
@@ -102,11 +104,48 @@ export function validationErrorResponse(errors: Record<string, string>) {
 }
 
 export function serverErrorResponse(error: unknown) {
-  const message = error instanceof Error ? error.message : "An unexpected error occurred";
   console.error("API Error:", error);
+
+  // Map known Prisma errors to friendly client messages instead of
+  // leaking internal error text (schema, constraint names, etc.).
+  const prismaError = error as { code?: string; meta?: { target?: string[]; cause?: string } };
+  if (prismaError?.code === "P2002") {
+    const target = prismaError.meta?.target?.join(", ") || "field";
+    return NextResponse.json(
+      { data: null, error: { message: `A record with this ${target} already exists` } },
+      { status: 409 }
+    );
+  }
+  if (prismaError?.code === "P2025") {
+    return NextResponse.json(
+      { data: null, error: { message: "The requested record does not exist" } },
+      { status: 404 }
+    );
+  }
+  if (prismaError?.code === "P2003") {
+    return NextResponse.json(
+      { data: null, error: { message: "The referenced record does not exist" } },
+      { status: 400 }
+    );
+  }
+
+  const message =
+    error instanceof Error && !isPrismaRawError(error.message)
+      ? error.message
+      : "An unexpected error occurred. Please try again.";
   return NextResponse.json(
     { data: null, error: { message } },
     { status: 500 }
+  );
+}
+
+function isPrismaRawError(message: string): boolean {
+  return (
+    message.includes("prisma.") ||
+    message.includes("Invalid") ||
+    message.includes("Foreign key") ||
+    message.includes("Unique constraint") ||
+    message.includes("error:")
   );
 }
 

@@ -201,6 +201,18 @@ test.describe("API routes", () => {
   test("/api/medical-records", async ({ page }) => {
     await assertApiOk(page, "/api/medical-records");
   });
+
+  test("/api/notifications  — Notifications feed", async ({ page }) => {
+    await assertApiOk(page, "/api/notifications");
+  });
+
+  test("/api/search  — Search API", async ({ page }) => {
+    await assertApiOk(page, "/api/search");
+  });
+
+  test("/search  — Search results page", async ({ page }) => {
+    await assertPageOk(page, "/search");
+  });
 });
 
 // ──────────────────────────────────────────────

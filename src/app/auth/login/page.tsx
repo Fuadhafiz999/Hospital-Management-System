@@ -53,7 +53,7 @@ export default function LoginPage() {
       const json = await res.json();
 
       if (!res.ok) {
-        const message = json.error || "An unexpected error occurred. Please try again.";
+        const message = json.error?.message || "An unexpected error occurred. Please try again.";
 
         if (message.includes("Invalid login credentials")) {
           showError("Sign in failed", "Invalid email or password. Please try again.");
@@ -225,23 +225,7 @@ export default function LoginPage() {
           )}
         </div>
 
-        {/* Remember me + Forgot password */}
-        <div className="flex items-center justify-between">
-          <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              defaultChecked
-              className="h-4 w-4 rounded border-secondary-300 text-primary-600 focus:ring-primary-500"
-            />
-            <span className="text-sm text-secondary-600">Remember me</span>
-          </label>
-          <button
-            type="button"
-            className="text-sm font-medium text-primary-600 transition-colors hover:text-primary-700"
-          >
-            Forgot password?
-          </button>
-        </div>
+
 
         {/* Submit */}
         <button

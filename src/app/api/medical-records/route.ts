@@ -125,15 +125,62 @@ export async function POST(request: NextRequest) {
       { field: "diagnosis", label: "Diagnosis", type: "string", required: true, minLength: 2 },
       { field: "doctor_id", label: "Doctor", type: "string", required: false },
       { field: "notes", label: "Notes", type: "string", required: false },
-      { field: "vitals_json", label: "Vitals", type: "string", required: false },
-      { field: "prescription", label: "Prescription", type: "string", required: false },
     ]);
 
     if (!validation.valid) {
       return validationErrorResponse(validation.errors);
     }
 
-    const { appointment_id, patient_id, doctor_id, diagnosis, notes, vitals_json, prescription } = validation.data;
+    const { appointment_id, patient_id, doctor_id, diagnosis, notes } = validation.data;
+
+    // Vitals and prescriptions are structured JSON (object / array of
+    // objects) — handle them explicitly instead of string coercion,
+    // which previously corrupted them into "[object Object]".
+    const rawVitals = body.vitals_json;
+    let vitals_json: unknown = {};
+    if (rawVitals === undefined || rawVitals === null || rawVitals === "") {
+      vitals_json = {};
+    } else if (typeof rawVitals === "object") {
+      vitals_json = rawVitals;
+    } else if (typeof rawVitals === "string") {
+      try {
+        const parsed = JSON.parse(rawVitals);
+        vitals_json = typeof parsed === "object" && parsed !== null ? parsed : {};
+      } catch {
+        return NextResponse.json(
+          { data: null, error: { message: "vitals_json must be a JSON object" } },
+          { status: 400 }
+        );
+      }
+    } else {
+      return NextResponse.json(
+        { data: null, error: { message: "vitals_json must be a JSON object" } },
+        { status: 400 }
+      );
+    }
+
+    const rawPrescription = body.prescription;
+    let prescription: unknown = [];
+    if (rawPrescription === undefined || rawPrescription === null || rawPrescription === "") {
+      prescription = [];
+    } else if (Array.isArray(rawPrescription)) {
+      prescription = rawPrescription;
+    } else if (typeof rawPrescription === "string") {
+      try {
+        const parsed = JSON.parse(rawPrescription);
+        prescription = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return NextResponse.json(
+          { data: null, error: { message: "prescription must be a JSON array" } },
+          { status: 400 }
+        );
+      }
+    } else {
+      return NextResponse.json(
+        { data: null, error: { message: "prescription must be a JSON array" } },
+        { status: 400 }
+      );
+    }
 
     // Check if a medical record already exists for this appointment
     const existing = await prisma.medicalRecord.findUnique({

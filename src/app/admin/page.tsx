@@ -136,7 +136,7 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <Header title="Dashboard" subtitle="Welcome back, Admin" userName="Admin" userRole="admin" />
+      <Header title="Dashboard" subtitle="Welcome back" showSearch={true} />
 
       <div className="page-container space-y-6">
         {error && (

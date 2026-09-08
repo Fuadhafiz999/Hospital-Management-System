@@ -5,6 +5,7 @@ import Header from "@/components/layout/Header";
 import Card, { CardContent } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { showSuccess, showError } from "@/lib/toast";
 import type { DoctorRow, ProfileRow } from "@/types/supabase";
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -24,6 +25,7 @@ type DoctorFormData = {
   licenseNumber: string;
   roomNumber: string;
   fee: string;
+  departmentId: string;
 };
 
 const emptyForm: DoctorFormData = {
@@ -34,6 +36,7 @@ const emptyForm: DoctorFormData = {
   licenseNumber: "",
   roomNumber: "",
   fee: "",
+  departmentId: "",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -176,6 +179,7 @@ export default function AdminDoctorsPage() {
       const json = await res.json();
 
       if (!res.ok || json.error) {
+        showError("Save failed", json.error?.message || "Could not update the doctor.");
         return;
       }
 
@@ -185,9 +189,10 @@ export default function AdminDoctorsPage() {
           d.id === editing.doctorId ? { ...d, ...updates } : d
         )
       );
+      showSuccess("Doctor updated");
       cancelEditing();
     } catch {
-      console.error("Failed to save edit.");
+      showError("Save failed", "Please try again.");
     } finally {
       setSavingId(null);
     }
@@ -222,57 +227,33 @@ export default function AdminDoctorsPage() {
     setCreateSuccess(null);
 
     try {
-      // 1. Create auth user with a temporary password
-      const tempPassword = crypto.randomUUID().slice(0, 12) + "Aa1!";
-      const authRes = await fetch("/api/auth/register", {
+      // Single call: provisions the login account AND the doctor record.
+      // The API generates a temp password and returns it once.
+      const res = await fetch("/api/doctors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
-          password: tempPassword,
-          fullName: formData.fullName,
-          role: "DOCTOR",
-        }),
-      });
-      const authJson = await authRes.json();
-
-      if (!authRes.ok) {
-        setCreateError(authJson.error || "Failed to create user account.");
-        return;
-      }
-
-      if (!authJson.user) {
-        setCreateError("Failed to create user account. Please try again.");
-        return;
-      }
-
-      // 2. Create doctor record (includes profile update)
-      const docRes = await fetch("/api/doctors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: authJson.user.id,
           full_name: formData.fullName,
-          email: formData.email,
           phone: formData.phone || null,
           specialization: formData.specialization,
           license_number: formData.licenseNumber,
           fee: formData.fee ? parseFloat(formData.fee) : 0,
           room_number: formData.roomNumber || null,
+          department_id: formData.departmentId || null,
         }),
       });
-      const docJson = await docRes.json();
+      const json = await res.json();
 
-      if (!docRes.ok || docJson.error) {
-        setCreateError(
-          "Failed to create doctor record: " + (docJson.error?.message || "Unknown error")
-        );
+      if (!res.ok || json.error) {
+        setCreateError(json.error?.message || "Failed to create the doctor account.");
         return;
       }
 
-      // Success
+      // Success — show the temp password so the admin can hand it to
+      // the doctor (no email flow exists in this build)
       setCreateSuccess(
-        `Doctor "${formData.fullName}" created successfully! They will receive an email to activate their account.`
+        `Doctor "${formData.fullName}" created successfully! Temporary password: ${json.data.temp_password} — share it with the doctor so they can sign in.`
       );
       setFormData(emptyForm);
 
@@ -303,14 +284,18 @@ export default function AdminDoctorsPage() {
         method: "DELETE",
       });
 
+      const json = res.ok ? null : await res.json().catch(() => null);
       if (!res.ok) {
+        showError("Delete failed", json?.error?.message || "Could not delete the doctor.");
+        setDeletingId(null);
         return;
       }
 
+      showSuccess("Doctor deleted");
       setDoctors((prev) => prev.filter((d) => d.id !== deletingId));
       setDeletingId(null);
     } catch {
-      console.error("Failed to delete doctor.");
+      showError("Delete failed", "Please try again.");
     } finally {
       setIsDeleting(false);
     }
@@ -342,7 +327,7 @@ export default function AdminDoctorsPage() {
         subtitle={`${doctors.length} registered doctor${doctors.length !== 1 ? "s" : ""} · ${specialties.length} specialties`}
         userName="Admin User"
         userRole="admin"
-        showSearch={false}
+        showSearch={true}
       />
 
       <div className="page-container space-y-6">

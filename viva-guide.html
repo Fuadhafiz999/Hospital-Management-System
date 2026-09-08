@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HospiTrack — Viva Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .section-card { transition: all 0.2s ease; }
+        .section-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        html { scroll-behavior: smooth; }
+        @media print { .no-print { display: none !important; } body { font-size: 11pt; } }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50:'#f0fdfa', 100:'#ccfbf1', 200:'#99f6e4', 300:'#5eead4', 400:'#2dd4bf', 500:'#14b8a6', 600:'#0d9488', 700:'#0f766e', 800:'#115e59', 900:'#134e4a' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-white text-gray-800 leading-relaxed">
+
+<!-- LANGUAGE TOGGLE -->
+<div id="langToggle" class="fixed top-4 right-4 z-50 no-print">
+    <button onclick="toggleLang()" id="langBtn" class="bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 transition shadow-md flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
+        <span id="langLabel">Translate to Bangla</span>
+    </button>
+</div>
+
+<!-- HEADER -->
+<header class="border-b border-gray-200 bg-white sticky top-0 z-40 no-print">
+    <div class="max-w-5xl mx-auto px-6 py-4">
+        <h1 class="text-2xl font-bold text-gray-900">HospiTrack</h1>
+        <p class="text-sm text-gray-500 mt-1" data-en="Hospital Management System — Viva Guide" data-bn="হাসপাতাল ব্যবস্থাপনা সিস্টেম — ভাইভা গাইড">Hospital Management System — Viva Guide</p>
+    </div>
+</header>
+
+<!-- TABLE OF CONTENTS -->
+<nav class="max-w-5xl mx-auto px-6 py-6 no-print">
+    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3" data-en="Contents" data-bn="বিষয়সূচি">Contents</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+        <a href="#overview" class="text-brand-600 hover:underline" data-en="1. Overview" data-bn="১. সারসংক্ষেপ">1. Overview</a>
+        <a href="#howto" class="text-brand-600 hover:underline" data-en="2. How To Use" data-bn="২. কীভাবে ব্যবহার করবেন">2. How To Use</a>
+        <a href="#architecture" class="text-brand-600 hover:underline" data-en="3. Architecture" data-bn="৩. স্থাপত্য">3. Architecture</a>
+        <a href="#database" class="text-brand-600 hover:underline" data-en="4. Database" data-bn="৪. ডাটাবেস">4. Database</a>
+        <a href="#auth" class="text-brand-600 hover:underline" data-en="5. Auth" data-bn="৫. প্রমাণীকরণ">5. Auth</a>
+        <a href="#features" class="text-brand-600 hover:underline" data-en="6. Features" data-bn="৬. বৈশিষ্ট্য">6. Features</a>
+        <a href="#flow" class="text-brand-600 hover:underline" data-en="7. User Flow" data-bn="৭. ব্যবহারকারীর প্রবাহ">7. User Flow</a>
+        <a href="#definitions" class="text-brand-600 hover:underline" data-en="8. Definitions" data-bn="৮. সংজ্ঞা">8. Definitions</a>
+        <a href="#qa" class="text-brand-600 hover:underline" data-en="9. Q&A" data-bn="৯. প্রশ্নোত্তর">9. Q&A</a>
+        <a href="#design" class="text-brand-600 hover:underline" data-en="10. Design" data-bn="১০. ডিজাইন">10. Design</a>
+        <a href="#challenges" class="text-brand-600 hover:underline" data-en="11. Challenges" data-bn="১১. চ্যালেঞ্জ">11. Challenges</a>
+        <a href="#future" class="text-brand-600 hover:underline" data-en="12. Future" data-bn="১২. ভবিষ্যৎ">12. Future</a>
+    </div>
+</nav>
+
+<main class="max-w-5xl mx-auto px-6 pb-20 space-y-12">
+
+<!-- 1. PROJECT OVERVIEW -->
+<section id="overview" class="section-card border border-gray-200 rounded-xl p-6 md:p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4" data-en="1. Project Overview" data-bn="১. প্রকল্পের সারসংক্ষেপ">1. Project Overview</h2>
+    <div class="space-y-3 text-sm text-gray-700">
+        <p data-en="<strong>Name:</strong> HospiTrack — Hospital Management System" data-bn="<strong>নাম:</strong> HospiTrack — হাসপাতাল ব্যবস্থাপনা সিস্টেম"><strong>Name:</strong> HospiTrack — Hospital Management System</p>
+        <p data-en="<strong>Problem:</strong> Manual hospital work causes scheduling conflicts, lost records, and billing errors." data-bn="<strong>সমস্যা:</strong> ম্যানুয়াল হাসপাতাল কাজে সময়সূচির দ্বন্দ্ব, হারিয়ে যাওয়া রেকর্ড এবং বিলিং ত্রুটি হয়।"><strong>Problem:</strong> Manual hospital work causes scheduling conflicts, lost records, and billing errors.</p>
+        <p data-en="<strong>Solution:</strong> A web app with 3 portals — Admin, Doctor, Patient — each with role-specific features." data-bn="<strong>সমাধান:</strong> ৩টি পোর্টাল সহ ওয়েব অ্যাপ — অ্যাডমিন, ডাক্তার, রোগী — প্রতিটিতে ভূমিকা-নির্দিষ্ট বৈশিষ্ট্য।"><strong>Solution:</strong> A web app with 3 portals — Admin, Doctor, Patient — each with role-specific features.</p>
+        <ul class="list-disc list-inside ml-2 space-y-1 text-xs">
+            <li data-en="Centralizes hospital data in one database" data-bn="সমস্ত হাসপাতালের তথ্য একটি ডাটাবেসে কেন্দ্রীভূত করে">Centralizes hospital data in one database</li>
+            <li data-en="Real-time appointment scheduling" data-bn="রিয়েল-টাইম অ্যাপয়েন্টমেন্ট সময়সূচি">Real-time appointment scheduling</li>
+            <li data-en="Doctors access patient history instantly" data-bn="ডাক্তাররা রোগীর ইতিহাসে তাৎক্ষণিক প্রবেশ করে">Doctors access patient history instantly</li>
+            <li data-en="Automated billing and invoice tracking" data-bn="স্বয়ংক্রিয় বিলিং এবং চালান ট্র্যাকিং">Automated billing and invoice tracking</li>
+        </ul>
+    </div>
+</section>
+
+<!-- 2. HOW TO USE -->
+<section id="howto" class="section-card border border-gray-200 rounded-xl p-6 md:p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4" data-en="2. How To Use This Software" data-bn="২. এই সফটওয়্যার কীভাবে ব্যবহার করবেন">2. How To Use This Software</h2>
+    <div class="space-y-4 text-sm">
+
+        <!-- Register -->
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How to register an account?" data-bn="অ্যাকাউন্ট কীভাবে নিবন্ধন করবেন?">How to register an account?</h3>
+            <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                <p data-en="1. Go to the Register page" data-bn="১. নিবন্ধন পেজে যান">1. Go to the Register page</p>
+                <p data-en="2. Enter your full name, email, phone number, and password" data-bn="২. আপনার পুরো নাম, ইমেইল, ফোন নম্বর এবং পাসওয়ার্ড দিন">2. Enter your full name, email, phone number, and password</p>
+                <p data-en="3. Click Register — your account is created with role = PATIENT" data-bn="৩. নিবন্ধন ক্লিক করুন — আপনার অ্যাকাউন্ট role = PATIENT দিয়ে তৈরি হবে">3. Click Register — your account is created with role = PATIENT</p>
+                <p data-en="4. You are redirected to the login page" data-bn="৪. আপনাকে লগইন পেজে পুনর্নির্দেশিত করা হবে">4. You are redirected to the login page</p>
+            </div>
+        </div>
+
+        <!-- Login -->
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How to log in?" data-bn="কীভাবে লগইন করবেন?">How to log in?</h3>
+            <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                <p data-en="1. Enter your email and password" data-bn="১. আপনার ইমেইল এবং পাসওয়ার্ড দিন">1. Enter your email and password</p>
+                <p data-en="2. Click Sign In" data-bn="২. সাইন ইন ক্লিক করুন">2. Click Sign In</p>
+                <p data-en="3. The system checks your role and redirects you to the right portal:" data-bn="৩. সিস্টেম আপনার ভূমিকা যাচাই করে এবং সঠিক পোর্টালে পুনর্নির্দেশিত করে:">3. The system checks your role and redirects you to the right portal:</p>
+                <ul class="list-disc list-inside ml-4 space-y-0.5">
+                    <li data-en="ADMIN → /admin/dashboard" data-bn="ADMIN → /admin/dashboard">ADMIN → /admin/dashboard</li>
+                    <li data-en="DOCTOR → /doctor/dashboard" data-bn="DOCTOR → /doctor/dashboard">DOCTOR → /doctor/dashboard</li>
+                    <li data-en="PATIENT → /patient/dashboard" data-bn="PATIENT → /patient/dashboard">PATIENT → /patient/dashboard</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Patient: Book Appointment -->
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How does a patient book an appointment?" data-bn="রোগী কীভাবে অ্যাপয়েন্টমেন্ট বুক করে?">How does a patient book an appointment?</h3>
+            <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                <p data-en='1. Go to "Browse Doctors" page' data-bn='১. "ডাক্তার ব্রাউজ" পেজে যান'>1. Go to "Browse Doctors" page</p>
+                <p data-en="2. Search by doctor name or specialty" data-bn="২. ডাক্তারের নাম বা বিশেষত্ব দিয়ে অনুসন্ধান করুন">2. Search by doctor name or specialty</p>
+                <p data-en="3. Click on a doctor to see their details (fee, room, specialization)" data-bn="৩. ডাক্তারের বিস্তারিত দেখতে ক্লিক করুন (ফি, রুম, বিশেষত্ব)">3. Click on a doctor to see their details (fee, room, specialization)</p>
+                <p data-en="4. Click Book → select a date from the calendar → pick an available time slot" data-bn="৪. বুক ক্লিক করুন → ক্যালেন্ডার থেকে তারিখ নির্বাচন করুন → উপলব্ধ সময় স্লট বাছাই করুন">4. Click Book → select a date from the calendar → pick an available time slot</p>
+                <p data-en="5. Enter a reason for the visit (e.g., 'Fever', 'Checkup')" data-bn="৫. সাক্ষাৎযোগ্য কারণ লিখুন (যেমন, 'জ্বর', 'চেকআপ')">5. Enter a reason for the visit (e.g., 'Fever', 'Checkup')</p>
+                <p data-en='6. Click "Book Appointment" — status is set to PENDING' data-bn='৬. "অ্যাপয়েন্টমেন্ট বুক করুন" ক্লিক করুন — স্ট্যাটাস PENDING সেট হয়'>6. Click "Book Appointment" — status is set to PENDING</p>
+                <p data-en="7. The appointment now appears in the admin's queue for approval" data-bn="৭. অ্যাপয়েন্টমেন্টটি এখন অনুমোদনের জন্য অ্যাডমিনের কিউতে দেখা যায়">7. The appointment now appears in the admin's queue for approval</p>
+            </div>
+        </div>
+
+        <!-- Admin: Assign Doctor -->
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How does an admin assign a doctor to an appointment?" data-bn="অ্যাডমিন কীভাবে অ্যাপয়েন্টমেন্টে ডাক্তার নির্ধারণ করে?">How does an admin assign a doctor to an appointment?</h3>
+            <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                <p data-en='1. Go to "Appointments" page in the admin portal' data-bn='১. অ্যাডমিন পোর্টালে "অ্যাপয়েন্টমেন্ট" পেজে যান'>1. Go to "Appointments" page in the admin portal</p>
+                <p data-en="2. See all appointments with PENDING status at the top" data-bn="২. শীর্ষে PENDING স্ট্যাটাস সহ সমস্ত অ্যাপয়েন্টমেন্ট দেখুন">2. See all appointments with PENDING status at the top</p>
+                <p data-en="3. Click the Assign button on a pending appointment" data-bn="৩. একটি অপেক্ষমাণ অ্যাপয়েন্টমেন্টে নির্ধারণ বাটনে ক্লিক করুন">3. Click the Assign button on a pending appointment</p>
+                <p data-en="4. Select a doctor from the dropdown (shows name, specialization, room)" data-bn="৪. ড্রপডাউন থেকে একজন ডাক্তার নির্বাচন করুন (নাম, বিশেষত্ব, রুম দেখায়)">4. Select a doctor from the dropdown (shows name, specialization, room)</p>
+                <p data-en='5. Click "Assign" — the doctor is linked to the appointment' data-bn='৫. "নির্ধারণ করুন" ক্লিক করুন — ডাক্তার অ্যাপয়েন্টমেন্টের সাথে সংযুক্ত হন'>5. Click "Assign" — the doctor is linked to the appointment</p>
+                <p data-en="6. Click Confirm to change status from PENDING → CONFIRMED" data-bn="৬. স্ট্যাটাস PENDING → CONFIRMED পরিবর্তন করতে নিশ্চিত করুন ক্লিক করুন">6. Click Confirm to change status from PENDING → CONFIRMED</p>
+                <p data-en="7. The patient can now see the confirmed appointment in their dashboard" data-bn="৭. রোগী এখন তাদের ড্যাশবোর্ডে নিশ্চিত অ্যাপয়েন্টমেন্ট দেখতে পারে">7. The patient can now see the confirmed appointment in their dashboard</p>
+            </div>
+        </div>
+
+        <!-- Admin: Cancel Appointment -->
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How to cancel an appointment?" data-bn="অ্যাপয়েন্টমেন্ট কীভাবে বাতিল করবেন?">How to cancel an appointment?</h3>
+            <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                <p data-en="1. Admin or Doctor can cancel from the Appointments page" data-bn="১. অ্যাডমিন বা ডাক্তার অ্যাপয়েন্টমেন্ট পেজ থেকে বাতিল করতে পারে">1. Admin or Doctor can cancel from the Appointments page</p>
+                <p data-en="2. Click the Cancel button on a PENDING or CONFIRMED appointment" data-bn="২. PENDING বা CONFIRMED অ্যাপয়েন্টমেন্টে বাতিল বাটনে ক্লিক করুন">2. Click the Cancel button on a PENDING or CONFIRMED appointment</p>
+                <p data-en="3. Status changes to CANCELLED" data-bn="৩. স্ট্যাটাস CANCELLED-এ পরিবর্তিত হয়">3. Status changes to CANCELLED</p>
+                <p data-en="4. Note: You cannot cancel a COMPLETED appointment" data-bn="৪. মনে রাখুন: COMPLETED অ্যাপয়েন্টমেন্ট বাতিল করা যায় না">4. Note: You cannot cancel a COMPLETED appointment</p>
+            </div>
+        </div>
+
+        <!-- Doctor: Complete Consultation -->
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How does a doctor complete a consultation?" data-bn="ডাক্তার কীভাবে পরামর্শ সম্পূর্ণ করে?">How does a doctor complete a consultation?</h3>
+            <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                <p data-en='1. Go to "Appointments" in the doctor portal' data-bn='১. ডাক্তার পোর্টালে "অ্যাপয়েন্টমেন্ট"-এ যান'>1. Go to "Appointments" in the doctor portal</p>
+                <p data-en="2. Find the CONFIRMED appointment for today" data-bn="২. আজকের CONFIRMED অ্যাপয়েন্টমেন্ট খুঁজুন">2. Find the CONFIRMED appointment for today</p>
+                <p data-en="3. Click 'Consult' to open the Consultation Modal" data-bn="৩. পরামর্শ মোডাল খুলতে 'পরামর্শ' ক্লিক করুন">3. Click 'Consult' to open the Consultation Modal</p>
+                <p data-en="4. Fill in: diagnosis (required), vitals like BP/temperature (optional), notes (optional)" data-bn="৪. পূরণ করুন: রোগ নির্ণয় (প্রয়োজনীয়), রক্তচাপ/তাপমাত্রা (ঐচ্ছিক), নোট (ঐচ্ছিক)">4. Fill in: diagnosis (required), vitals like BP/temperature (optional), notes (optional)</p>
+                <p data-en="5. Add prescriptions: medication name, dosage, frequency, instructions" data-bn="৫. প্রেসক্রিপশন যোগ করুন: ওষুধের নাম, ডোজ, ফ্রিকোয়েন্সি, নির্দেশনা">5. Add prescriptions: medication name, dosage, frequency, instructions</p>
+                <p data-en='6. Click "Submit" — a MedicalRecord is created and appointment auto-changes to COMPLETED' data-bn='৬. "জমা দিন" ক্লিক করুন — একটি মেডিকেল রেকর্ড তৈরি হয় এবং অ্যাপয়েন্টমেন্ট স্বয়ংক্রিয়ভাবে COMPLETED হয়'>6. Click "Submit" — a MedicalRecord is created and appointment auto-changes to COMPLETED</p>
+            </div>
+        </div>
+
+        <!-- Patient: View Records -->
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How does a patient view their medical records?" data-bn="রোগী কীভাবে তাদের চিকিৎসা রেকর্ড দেখে?">How does a patient view their medical records?</h3>
+            <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                <p data-en='1. Go to "Medical Records" in the patient portal' data-bn='১. রোগী পোর্টালে "চিকিৎসা রেকর্ড"-এ যান'>1. Go to "Medical Records" in the patient portal</p>
+                <p data-en="2. See a list of all past consultations" data-bn="২. সমস্ত অতীত পরামর্শের তালিকা দেখুন">2. See a list of all past consultations</p>
+                <p data-en="3. Click on a record to expand and see: diagnosis, vitals, notes, prescriptions" data-bn="৩. রোগ নির্ণয়, জীবনীসূচক, নোট, প্রেসক্রিপশন দেখতে একটি রেকর্ডে ক্লিক করুন">3. Click on a record to expand and see: diagnosis, vitals, notes, prescriptions</p>
+            </div>
+        </div>
+
+        <!-- Admin: Manage Billing -->
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How does billing work?" data-bn="বিলিং কীভাবে কাজ করে?">How does billing work?</h3>
+            <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                <p data-en='1. Admin goes to "Billing" page and clicks "Create Invoice"' data-bn='১. অ্যাডমিন "বিলিং" পেজে যান এবং "চালান তৈরি করুন" ক্লিক করে'>1. Admin goes to "Billing" page and clicks "Create Invoice"</p>
+                <p data-en="2. Select the patient, enter description and amount" data-bn="২. রোগী নির্বাচন করুন, বিবরণ এবং পরিমাণ দিন">2. Select the patient, enter description and amount</p>
+                <p data-en="3. Invoice number is auto-generated (INV-001, INV-002...)" data-bn="৩. চালান নম্বর স্বয়ংক্রিয়ভাবে তৈরি হয় (INV-001, INV-002...)">3. Invoice number is auto-generated (INV-001, INV-002...)</p>
+                <p data-en='4. Patient sees the invoice in their "Billing" page and clicks "Pay"' data-bn='৪. রোগী তাদের "বিলিং" পেজে চালান দেখে এবং "পেমেন্ট" ক্লিক করে'>4. Patient sees the invoice in their "Billing" page and clicks "Pay"</p>
+                <p data-en="5. Select payment method (Card / Cash / Insurance)" data-bn="৫. পেমেন্ট পদ্ধতি নির্বাচন করুন (কার্ড / নগদ / বীমা)">5. Select payment method (Card / Cash / Insurance)</p>
+                <p data-en="6. Invoice status changes to PAID" data-bn="৬. চালান স্ট্যাটাস PAID-এ পরিবর্তিত হয়">6. Invoice status changes to PAID</p>
+            </div>
+        </div>
+
+        <!-- Admin: Manage Departments -->
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How to manage departments?" data-bn="বিভাগ কীভাবে পরিচালনা করবেন?">How to manage departments?</h3>
+            <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                <p data-en='1. Go to "Departments" in the admin portal' data-bn='১. অ্যাডমিন পোর্টালে "বিভাগ"-এ যান'>1. Go to "Departments" in the admin portal</p>
+                <p data-en='2. Click "Add Department" → enter name, select a head doctor, set location' data-bn='২. "বিভাগ যোগ করুন" ক্লিক করুন → নাম দিন, প্রধান ডাক্তার নির্বাচন করুন, অবস্থান সেট করুন'>2. Click "Add Department" → enter name, select a head doctor, set location</p>
+                <p data-en="3. Choose an icon and color for the department card" data-bn="৩. বিভাগ কার্ডের জন্য আইকন এবং রঙ বাছাই করুন">3. Choose an icon and color for the department card</p>
+                <p data-en="4. Click Save — department is created" data-bn="৪. সংরক্ষণ ক্লিক করুন — বিভাগ তৈরি হয়">4. Click Save — department is created</p>
+                <p data-en="5. Can also edit or delete departments from the list" data-bn="৫. তালিকা থেকে বিভাগ সম্পাদনা বা মুছেও ফেলা যায়">5. Can also edit or delete departments from the list</p>
+            </div>
+        </div>
+
+        <!-- Admin: Manage Beds -->
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How to manage hospital beds?" data-bn="হাসপাতালের বিছানা কীভাবে পরিচালনা করবেন?">How to manage hospital beds?</h3>
+            <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                <p data-en='1. Go to "Beds" in the admin portal' data-bn='১. অ্যাডমিন পোর্টালে "বিছানা"-এ যান'>1. Go to "Beds" in the admin portal</p>
+                <p data-en="2. See beds grouped by ward" data-bn="২. ওয়ার্ড অনুযায়ী গ্রুপ করা বিছানা দেখুন">2. See beds grouped by ward</p>
+                <p data-en="3. Toggle bed status: Available ↔ Occupied" data-bn="৩. বিছানা স্ট্যাটাস টগল করুন: উপলব্ধ ↔ দখলকৃত">3. Toggle bed status: Available ↔ Occupied</p>
+                <p data-en='4. Click "Add Bed" to create a new bed with number, ward, and department' data-bn='৪. নম্বর, ওয়ার্ড এবং বিভাগ সহ নতুন বিছানা তৈরি করতে "বিছানা যোগ করুন" ক্লিক করুন'>4. Click "Add Bed" to create a new bed with number, ward, and department</p>
+            </div>
+        </div>
+
+        <!-- Doctor: View Schedule -->
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How does a doctor view their schedule?" data-bn="ডাক্তার কীভাবে তাদের সময়সূচি দেখে?">How does a doctor view their schedule?</h3>
+            <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                <p data-en='1. Go to "Schedule" in the doctor portal' data-bn='১. ডাক্তার পোর্টালে "সময়সূচি"-এ যান'>1. Go to "Schedule" in the doctor portal</p>
+                <p data-en="2. See a weekly calendar view with all appointments" data-bn="২. সমস্ত অ্যাপয়েন্টমেন্ট সহ সাপ্তাহিক ক্যালেন্ডার ভিউ দেখুন">2. See a weekly calendar view with all appointments</p>
+                <p data-en="3. Each appointment shows patient name, time slot, and status" data-bn="৩. প্রতিটি অ্যাপয়েন্টমেন্ট রোগীর নাম, সময় স্লট এবং স্ট্যাটাস দেখায়">3. Each appointment shows patient name, time slot, and status</p>
+            </div>
+        </div>
+
+        <!-- Admin: Search -->
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How does search work?" data-bn="অনুসন্ধান কীভাবে কাজ করে?">How does search work?</h3>
+            <div class="bg-gray-50 rounded-lg p-3 text-xs space-y-1">
+                <p data-en="1. Type a search query in the search bar" data-bn="১. সার্চ বারে একটি অনুসন্ধান কোয়েরি টাইপ করুন">1. Type a search query in the search bar</p>
+                <p data-en="2. The system searches across patients, doctors, and appointments simultaneously" data-bn="২. সিস্টেম একই সাথে রোগী, ডাক্তার এবং অ্যাপয়েন্টমেন্ট অনুসন্ধান করে">2. The system searches across patients, doctors, and appointments simultaneously</p>
+                <p data-en="3. Results are grouped by type with counts (e.g., '3 patients, 2 doctors, 1 appointment')" data-bn="৩. ফলাফল ধরন অনুযায়ী গ্রুপ করা হয় গণনা সহ (যেমন, '৩ জন রোগী, ২ জন ডাক্তার, ১টি অ্যাপয়েন্টমেন্ট')">3. Results are grouped by type with counts (e.g., '3 patients, 2 doctors, 1 appointment')</p>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- 3. ARCHITECTURE -->
+<section id="architecture" class="section-card border border-gray-200 rounded-xl p-6 md:p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4" data-en="3. Architecture" data-bn="৩. স্থাপত্য">3. Architecture</h2>
+    <div class="space-y-4 text-sm text-gray-700">
+        <div>
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="How It Works (8 steps)" data-bn="কীভাবে কাজ করে (৮টি ধাপ)">How It Works (8 steps)</h3>
+            <ol class="list-decimal list-inside space-y-1 ml-2 text-xs">
+                <li data-en="User opens site → sees login page" data-bn="ব্যবহারকারী সাইট খুলে → লগইন পেজ দেখে">User opens site → sees login page</li>
+                <li data-en="Enters email + password → clicks Sign In" data-bn="ইমেইল + পাসওয়ার্ড দিয়ে → সাইন ইন ক্লিক করে">Enters email + password → clicks Sign In</li>
+                <li data-en='Browser sends POST to <code>/api/auth/login</code>' data-bn='ব্রাউজার <code>/api/auth/login</code>-এ POST পাঠায়'>Browser sends POST to <code>/api/auth/login</code></li>
+                <li data-en="Server checks: email exists? password correct?" data-bn="সার্ভার যাচাই করে: ইমেইল আছে? পাসওয়ার্ড সঠিক?">Server checks: email exists? password correct?</li>
+                <li data-en="If valid → creates JWT token → sets as httpOnly cookie" data-bn="বৈধ হলে → JWT টোকেন তৈরি → httpOnly কুকি হিসাবে সেট করে">If valid → creates JWT token → sets as httpOnly cookie</li>
+                <li data-en="Browser stores cookie → redirects to dashboard (admin/doctor/patient)" data-bn="ব্রাউজার কুকি সংরক্ষণ → ড্যাশবোর্ডে পুনর্নির্দেশ (অ্যাডমিন/ডাক্তার/রোগী)">Browser stores cookie → redirects to dashboard (admin/doctor/patient)</li>
+                <li data-en="User navigates → browser sends GET requests to API routes" data-bn="ব্যবহারকারী নেভিগেট করে → ব্রাউজার API রুটে GET পাঠায়">User navigates → browser sends GET requests to API routes</li>
+                <li data-en="API queries PostgreSQL via Prisma → returns JSON → page updates" data-bn="API Prisma দিয়ে PostgreSQL কোয়েরি করে → JSON ফিরায় → পেজ আপডেট">API queries PostgreSQL via Prisma → returns JSON → page updates</li>
+            </ol>
+        </div>
+        <div>
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="Server vs Client Components" data-bn="সার্ভার বনাম ক্লায়েন্ট কম্পোনেন্ট">Server vs Client Components</h3>
+            <div class="grid md:grid-cols-2 gap-2 text-xs">
+                <div class="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                    <strong class="text-blue-900" data-en="Server Components (Layouts)" data-bn="সার্ভার কম্পোনেন্ট (লেআউট)">Server Components (Layouts)</strong>
+                    <p class="text-blue-800 mt-1" data-en="Run on server. Used for auth checks — wrong role = never see the page." data-bn="সার্ভারে চলে। প্রমাণীকরণ পরীক্ষায় ব্যবহৃত — ভুল ভূমিকা = পেজ দেখবেন না।">Run on server. Used for auth checks — wrong role = never see the page.</p>
+                </div>
+                <div class="bg-green-50 border border-green-100 rounded-lg p-3">
+                    <strong class="text-green-900" data-en="Client Components (Pages)" data-bn="ক্লায়েন্ট কম্পোনেন্ট (পেজ)">Client Components (Pages)</strong>
+                    <p class="text-green-800 mt-1" data-en='Run in browser with <code>"use client"</code>. Handle forms, buttons, state.' data-bn='ব্রাউজারে চলে <code>"use client"</code> দিয়ে। ফর্ম, বাটন, স্টেট পরিচালনা করে।'>Run in browser with <code>"use client"</code>. Handle forms, buttons, state.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 4. DATABASE -->
+<section id="database" class="section-card border border-gray-200 rounded-xl p-6 md:p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4" data-en="4. Database Design" data-bn="৪. ডাটাবেস ডিজাইন">4. Database Design</h2>
+    <div class="space-y-4 text-sm text-gray-700">
+        <div>
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="7 Models" data-bn="৭টি মডেল">7 Models</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead><tr class="border-b border-gray-200"><th class="py-2 font-semibold" data-en="Model" data-bn="মডেল">Model</th><th class="py-2 font-semibold" data-en="Purpose" data-bn="উদ্দেশ্য">Purpose</th><th class="py-2 font-semibold" data-en="Key Fields" data-bn="মূল ক্ষেত্র">Key Fields</th></tr></thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr><td class="py-1 font-medium">User</td><td data-en="Base account" data-bn="মৌলিক অ্যাকাউন্ট">Base account</td><td>email, passwordHash, fullName, role, phone</td></tr>
+                        <tr><td class="py-1 font-medium">Doctor</td><td data-en="Profile linked to User" data-bn="ব্যবহারকারীর সাথে সংযুক্ত প্রোফাইল">Profile linked to User</td><td>userId, specialization, licenseNumber, fee, roomNumber</td></tr>
+                        <tr><td class="py-1 font-medium">Department</td><td data-en="Hospital department" data-bn="হাসপাতালের বিভাগ">Hospital department</td><td>name, headDoctorId, location</td></tr>
+                        <tr><td class="py-1 font-medium">Appointment</td><td data-en="Scheduled visit" data-bn="নির্ধারিত সাক্ষাৎ">Scheduled visit</td><td>patientId, doctorId, date, timeSlot, status</td></tr>
+                        <tr><td class="py-1 font-medium">MedicalRecord</td><td data-en="Consultation record" data-bn="পরামর্শ রেকর্ড">Consultation record</td><td>appointmentId, diagnosis, prescription (JSON), vitalsJson</td></tr>
+                        <tr><td class="py-1 font-medium">Bed</td><td data-en="Hospital bed" data-bn="হাসপাতালের বিছানা">Hospital bed</td><td>number, ward, status, patientId</td></tr>
+                        <tr><td class="py-1 font-medium">Invoice</td><td data-en="Billing record" data-bn="বিলিং রেকর্ড">Billing record</td><td>invoiceNumber, patientId, amount, status</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div>
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="Relationships" data-bn="সম্পর্ক">Relationships</h3>
+            <ul class="list-disc list-inside ml-2 text-xs space-y-1">
+                <li data-en="User → Doctor (1-to-1)" data-bn="ব্যবহারকারী → ডাক্তার (১-থেকে-১)">User → Doctor (1-to-1)</li>
+                <li data-en="Doctor → Appointments (1-to-Many)" data-bn="ডাক্তার → অ্যাপয়েন্টমেন্ট (১-থেকে-অনেক)">Doctor → Appointments (1-to-Many)</li>
+                <li data-en="Patient (User) → Appointments (1-to-Many)" data-bn="রোগী (ব্যবহারকারী) → অ্যাপয়েন্টমেন্ট (১-থেকে-অনেক)">Patient (User) → Appointments (1-to-Many)</li>
+                <li data-en="Appointment → MedicalRecord (1-to-1, optional)" data-bn="অ্যাপয়েন্টমেন্ট → মেডিকেল রেকর্ড (১-থেকে-১, ঐচ্ছিক)">Appointment → MedicalRecord (1-to-1, optional)</li>
+                <li data-en="Department → Doctors (1-to-Many)" data-bn="বিভাগ → ডাক্তার (১-থেকে-অনেক)">Department → Doctors (1-to-Many)</li>
+            </ul>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-3 text-xs">
+            <strong data-en="Status Flow:" data-bn="স্ট্যাটাস প্রবাহ:">Status Flow:</strong> <code>PENDING → CONFIRMED → COMPLETED</code> <span data-en="(can cancel from PENDING or CONFIRMED)" data-bn="(PENDING বা CONFIRMED থেকে বাতিল করা যায়)">(can cancel from PENDING or CONFIRMED)</span>
+        </div>
+    </div>
+</section>
+
+<!-- 5. AUTH -->
+<section id="auth" class="section-card border border-gray-200 rounded-xl p-6 md:p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4" data-en="5. Authentication & Security" data-bn="৫. প্রমাণীকরণ ও নিরাপত্তা">5. Authentication & Security</h2>
+    <div class="space-y-4 text-sm text-gray-700">
+        <div>
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="Login Flow (7 steps)" data-bn="লগইন প্রবাহ (৭টি ধাপ)">Login Flow (7 steps)</h3>
+            <ol class="list-decimal list-inside space-y-1 ml-2 text-xs">
+                <li data-en="User enters email + password" data-bn="ব্যবহারকারী ইমেইল + পাসওয়ার্ড দেন">User enters email + password</li>
+                <li data-en="Zod validates client-side (email format, password length)" data-bn="Zod ক্লায়েন্ট-সাইডে যাচাই করে (ইমেইল ফরম্যাট, পাসওয়ার্ড দৈর্ঘ্য)">Zod validates client-side (email format, password length)</li>
+                <li data-en='POST to <code>/api/auth/login</code>' data-bn='<code>/api/auth/login</code>-এ POST'>POST to <code>/api/auth/login</code></li>
+                <li data-en="Server finds user by email" data-bn="সার্ভার ইমেইল দিয়ে ব্যবহারকারী খুঁজে বের করে">Server finds user by email</li>
+                <li data-en="bcrypt compares password with stored hash" data-bn="bcrypt পাসওয়ার্ডকে সংরক্ষিত হ্যাশের সাথে তুলনা করে">bcrypt compares password with stored hash</li>
+                <li data-en='If valid → creates JWT with <code>{ userId, email, role }</code>' data-bn='বৈধ হলে → <code>{ userId, email, role }</code> সহ JWT তৈরি করে'>If valid → creates JWT with <code>{ userId, email, role }</code></li>
+                <li data-en="Sets httpOnly cookie → browser sends it with every request" data-bn="httpOnly কুকি সেট করে → ব্রাউজার প্রতিটি অনুরোধে এটি পাঠায়">Sets httpOnly cookie → browser sends it with every request</li>
+            </ol>
+        </div>
+        <div>
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="Security Measures" data-bn="নিরাপত্তা ব্যবস্থা">Security Measures</h3>
+            <div class="grid md:grid-cols-2 gap-2 text-xs">
+                <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>Password Hashing:</strong> bcrypt, 10 salt rounds. One-way — can't reverse." data-bn="<strong>পাসওয়ার্ড হ্যাশিং:</strong> bcrypt, ১০টি সল্ট রাউন্ড। এক-দিকমুখী — উল্টানো যায় না।"><strong>Password Hashing:</strong> bcrypt, 10 salt rounds. One-way — can't reverse.</div>
+                <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>httpOnly Cookie:</strong> JWT in cookie JS can't read. Prevents XSS." data-bn="<strong>httpOnly কুকি:</strong> JS পড়তে না পারে এমন কুকিতে JWT। XSS রোধ করে।"><strong>httpOnly Cookie:</strong> JWT in cookie JS can't read. Prevents XSS.</div>
+                <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>Role Check:</strong> Layouts verify JWT role server-side. Wrong role → redirect." data-bn="<strong>ভূমিকা পরীক্ষা:</strong> লেআউট সার্ভার-সাইডে JWT ভূমিকা যাচাই করে। ভুল ভূমিকা → পুনর্নির্দেশ।"><strong>Role Check:</strong> Layouts verify JWT role server-side. Wrong role → redirect.</div>
+                <div class="bg-gray-50 rounded-lg p-3" data-en='<strong>Server Validation:</strong> <code>validateBody()</code> checks every API request.' data-bn='<strong>সার্ভার যাচাইকরণ:</strong> <code>validateBody()</code> প্রতিটি API অনুরোধ পরীক্ষা করে।'><strong>Server Validation:</strong> <code>validateBody()</code> checks every API request.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 6. FEATURES -->
+<section id="features" class="section-card border border-gray-200 rounded-xl p-6 md:p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4" data-en="6. Features by Portal" data-bn="৬. পোর্টাল অনুযায়ী বৈশিষ্ট্য">6. Features by Portal</h2>
+    <div class="space-y-4 text-sm text-gray-700">
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="Admin Portal" data-bn="অ্যাডমিন পোর্টাল">Admin Portal</h3>
+            <ul class="grid md:grid-cols-2 gap-1 list-disc list-inside ml-2 text-xs">
+                <li data-en="Dashboard: Live stats (patients, doctors, appointments, revenue)" data-bn="ড্যাশবোর্ড: লাইভ পরিসংখ্যান (রোগী, ডাক্তার, অ্যাপয়েন্টমেন্ট, রাজস্ব)">Dashboard: Live stats (patients, doctors, appointments, revenue)</li>
+                <li data-en="Patients: Register, search, view history" data-bn="রোগী: নিবন্ধন, অনুসন্ধান, ইতিহাস দেখুন">Patients: Register, search, view history</li>
+                <li data-en="Doctors: Create, edit room/fee, delete" data-bn="ডাক্তার: তৈরি, রুম/ফি সম্পাদনা, মুছুন">Doctors: Create, edit room/fee, delete</li>
+                <li data-en="Appointments: View all, assign doctors, confirm/cancel" data-bn="অ্যাপয়েন্টমেন্ট: সব দেখুন, ডাক্তার নির্ধারণ, নিশ্চিত/বাতিল">Appointments: View all, assign doctors, confirm/cancel</li>
+                <li data-en="Departments: CRUD with head doctor" data-bn="বিভাগ: প্রধান ডাক্তার সহ CRUD">Departments: CRUD with head doctor</li>
+                <li data-en="Beds: Ward-grouped view, status toggle" data-bn="বিছানা: ওয়ার্ড-গ্রুপ ভিউ, স্ট্যাটাস টগল">Beds: Ward-grouped view, status toggle</li>
+                <li data-en="Billing: Create invoices, mark paid" data-bn="বিলিং: চালান তৈরি, পেইড চিহ্নিত">Billing: Create invoices, mark paid</li>
+            </ul>
+        </div>
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="Doctor Portal" data-bn="ডাক্তার পোর্টাল">Doctor Portal</h3>
+            <ul class="grid md:grid-cols-2 gap-1 list-disc list-inside ml-2 text-xs">
+                <li data-en="Dashboard: Today's appointments" data-bn="ড্যাশবোর্ড: আজকের অ্যাপয়েন্টমেন্ট">Dashboard: Today's appointments</li>
+                <li data-en="Appointments: Confirm/complete/cancel" data-bn="অ্যাপয়েন্টমেন্ট: নিশ্চিত/সম্পূর্ণ/বাতিল">Appointments: Confirm/complete/cancel</li>
+                <li data-en="Records: Past consultations with diagnosis" data-bn="রেকর্ড: রোগ নির্ণয় সহ অতীত পরামর্শ">Records: Past consultations with diagnosis</li>
+                <li data-en="Schedule: Weekly calendar view" data-bn="সময়সূচি: সাপ্তাহিক ক্যালেন্ডার">Schedule: Weekly calendar view</li>
+            </ul>
+        </div>
+        <div class="border border-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2" data-en="Patient Portal" data-bn="রোগী পোর্টাল">Patient Portal</h3>
+            <ul class="grid md:grid-cols-2 gap-1 list-disc list-inside ml-2 text-xs">
+                <li data-en="Dashboard: Upcoming/past appointments" data-bn="ড্যাশবোর্ড: আসন্ন/অতীত অ্যাপয়েন্টমেন্ট">Dashboard: Upcoming/past appointments</li>
+                <li data-en="Book: Calendar picker, time slots, doctor selection" data-bn="বুক: ক্যালেন্ডার, সময় স্লট, ডাক্তার নির্বাচন">Book: Calendar picker, time slots, doctor selection</li>
+                <li data-en="My Appointments: View and cancel" data-bn="আমার অ্যাপয়েন্টমেন্ট: দেখুন এবং বাতিল করুন">My Appointments: View and cancel</li>
+                <li data-en="Records: Diagnosis, notes, vitals" data-bn="রেকর্ড: রোগ নির্ণয়, নোট, জীবনীসূচক">Records: Diagnosis, notes, vitals</li>
+                <li data-en="Browse Doctors: Search by name/specialty" data-bn="ডাক্তার ব্রাউজ: নাম/বিশেষত্ব অনুসারে অনুসন্ধান">Browse Doctors: Search by name/specialty</li>
+                <li data-en="Billing: View invoices, pay online" data-bn="বিলিং: চালান দেখুন, অনলাইনে পেমেন্ট">Billing: View invoices, pay online</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- 7. USER FLOW -->
+<section id="flow" class="section-card border border-gray-200 rounded-xl p-6 md:p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4" data-en="7. User Flow — Appointment Lifecycle" data-bn="৭. ব্যবহারকারীর প্রবাহ — অ্যাপয়েন্টমেন্ট জীবনচক্র">7. User Flow — Appointment Lifecycle</h2>
+    <div class="bg-gray-50 rounded-lg p-4 space-y-2 text-xs text-gray-700">
+        <div class="flex items-start gap-3"><span class="shrink-0 w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-[10px]">1</span><p data-en="<strong>Patient registers</strong> → POST /api/auth/register (role=PATIENT)" data-bn="<strong>রোগী নিবন্ধন করে</strong> → POST /api/auth/register (role=PATIENT)"><strong>Patient registers</strong> → POST /api/auth/register (role=PATIENT)</p></div>
+        <div class="flex items-start gap-3"><span class="shrink-0 w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-[10px]">2</span><p data-en="<strong>Patient logs in</strong> → JWT cookie set → redirected to /patient/dashboard" data-bn="<strong>রোগী লগইন করে</strong> → JWT কুকি সেট → /patient/dashboard-এ পুনর্নির্দেশ"><strong>Patient logs in</strong> → JWT cookie set → redirected to /patient/dashboard</p></div>
+        <div class="flex items-start gap-3"><span class="shrink-0 w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-[10px]">3</span><p data-en="<strong>Patient books appointment</strong> → POST /api/appointments → status=PENDING" data-bn="<strong>রোগী অ্যাপয়েন্টমেন্ট বুক করে</strong> → POST /api/appointments → status=PENDING"><strong>Patient books appointment</strong> → POST /api/appointments → status=PENDING</p></div>
+        <div class="flex items-start gap-3"><span class="shrink-0 w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-[10px]">4</span><p data-en="<strong>Admin assigns doctor</strong> → PATCH /api/appointments → updates doctorId" data-bn="<strong>অ্যাডমিন ডাক্তার নির্ধারণ করে</strong> → PATCH /api/appointments → doctorId আপডেট"><strong>Admin assigns doctor</strong> → PATCH /api/appointments → updates doctorId</p></div>
+        <div class="flex items-start gap-3"><span class="shrink-0 w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-[10px]">5</span><p data-en="<strong>Admin confirms</strong> → PATCH → PENDING → CONFIRMED" data-bn="<strong>অ্যাডমিন নিশ্চিত করে</strong> → PATCH → PENDING → CONFIRMED"><strong>Admin confirms</strong> → PATCH → PENDING → CONFIRMED</p></div>
+        <div class="flex items-start gap-3"><span class="shrink-0 w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-[10px]">6</span><p data-en="<strong>Doctor completes consultation</strong> → POST /api/medical-records → auto-sets COMPLETED" data-bn="<strong>ডাক্তার পরামর্শ সম্পূর্ণ করে</strong> → POST /api/medical-records → স্বয়ংক্রিয়ভাবে COMPLETED"><strong>Doctor completes consultation</strong> → POST /api/medical-records → auto-sets COMPLETED</p></div>
+        <div class="flex items-start gap-3"><span class="shrink-0 w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-[10px]">7</span><p data-en="<strong>Admin creates invoice</strong> → POST /api/billing → auto-generates INV-001..." data-bn="<strong>অ্যাডমিন চালান তৈরি করে</strong> → POST /api/billing → স্বয়ংক্রিয়ভাবে INV-001..."><strong>Admin creates invoice</strong> → POST /api/billing → auto-generates INV-001...</p></div>
+        <div class="flex items-start gap-3"><span class="shrink-0 w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-[10px]">8</span><p data-en="<strong>Patient pays</strong> → PATCH /api/billing → status: paid" data-bn="<strong>রোগী পেমেন্ট করে</strong> → PATCH /api/billing → status: paid"><strong>Patient pays</strong> → PATCH /api/billing → status: paid</p></div>
+    </div>
+</section>
+
+<!-- 8. DEFINITIONS -->
+<section id="definitions" class="section-card border border-gray-200 rounded-xl p-6 md:p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4" data-en="8. Key Definitions" data-bn="৮. মূল সংজ্ঞা">8. Key Definitions</h2>
+    <div class="grid md:grid-cols-2 gap-2 text-xs text-gray-700">
+        <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>ORM</strong> — Interact with DB using code objects instead of raw SQL. (Prisma)" data-bn="<strong>ORM</strong> — র SQL না লিখে কোড অবজেক্ট দিয়ে DB-র সাথে যোগাযোগ। (Prisma)"><strong>ORM</strong> — Interact with DB using code objects instead of raw SQL. (Prisma)</div>
+        <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>JWT</strong> — Token with user data (ID, email, role), signed with secret key." data-bn="<strong>JWT</strong> — ব্যবহারকারীর ডাটা (ID, ইমেইল, ভূমিকা) সহ টোকেন, সিক্রেট কী দ্বারা স্বাক্ষরিত।"><strong>JWT</strong> — Token with user data (ID, email, role), signed with secret key.</div>
+        <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>httpOnly Cookie</strong> — Cookie JS can't access. Prevents XSS." data-bn="<strong>httpOnly কুকি</strong> — JS প্রবেশ করতে পারে না। XSS রোধ করে।"><strong>httpOnly Cookie</strong> — Cookie JS can't access. Prevents XSS.</div>
+        <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>bcrypt</strong> — Password hashing. One-way: plain text → hash." data-bn="<strong>bcrypt</strong> — পাসওয়ার্ড হ্যাশিং। এক-দিকমুখী: প্লেইন টেক্সট → হ্যাশ।"><strong>bcrypt</strong> — Password hashing. One-way: plain text → hash.</div>
+        <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>RBAC</strong> — Access based on role. Admin/Doctor/Patient see different pages." data-bn="<strong>RBAC</strong> — ভূমিকা ভিত্তিক প্রবেশ। অ্যাডমিন/ডাক্তার/রোগী ভিন্ন পেজ দেখে।"><strong>RBAC</strong> — Access based on role. Admin/Doctor/Patient see different pages.</div>
+        <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>CRUD</strong> — Create, Read, Update, Delete. Every resource supports all four." data-bn="<strong>CRUD</strong> — তৈরি, পড়া, হালনাগাদ, মুছে ফেলা। প্রতিটি রিসোর্স চারটিই সমর্থন করে।"><strong>CRUD</strong> — Create, Read, Update, Delete. Every resource supports all four.</div>
+        <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>API</strong> — Rules for software to communicate. Frontend ↔ Backend via REST." data-bn="<strong>API</strong> — সফটওয়্যার যোগাযোগের নিয়ম। ফ্রন্টএন্ড ↔ ব্যাকএন্ড REST-এর মাধ্যমে।"><strong>API</strong> — Rules for software to communicate. Frontend ↔ Backend via REST.</div>
+        <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>SSR</strong> — Server renders page before sending. Faster load, allows auth checks." data-bn="<strong>SSR</strong> — সার্ভার পাঠানোর আগে পেজ রেন্ডার করে। দ্রুত লোড, প্রমাণীকরণ পরীক্ষা।"><strong>SSR</strong> — Server renders page before sending. Faster load, allows auth checks.</div>
+    </div>
+</section>
+
+<!-- 9. Q&A -->
+<section id="qa" class="section-card border border-gray-200 rounded-xl p-6 md:p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4" data-en="9. Viva Q&A" data-bn="৯. ভাইভা প্রশ্নোত্তর">9. Viva Q&A</h2>
+    <div class="space-y-3 text-sm">
+        <div class="border border-gray-100 rounded-lg p-4">
+            <p class="font-semibold text-gray-900" data-en="Q1: What is this project?" data-bn="প্রশ্ন ১: এই প্রকল্পটি কী?">Q1: What is this project?</p>
+            <p class="text-gray-700 mt-1 text-xs" data-en="HospiTrack — Hospital Management System with 3 portals: Admin manages ops, Doctor handles consultations, Patient books appointments and views records." data-bn="HospiTrack — ৩টি পোর্টাল সহ হাসপাতাল ব্যবস্থাপনা সিস্টেম: অ্যাডমিন পরিচালনা করে, ডাক্তার পরামর্শ পরিচালনা করে, রোগী অ্যাপয়েন্টমেন্ট বুক করে এবং রেকর্ড দেখে।">HospiTrack — Hospital Management System with 3 portals: Admin manages ops, Doctor handles consultations, Patient books appointments and views records.</p>
+        </div>
+        <div class="border border-gray-100 rounded-lg p-4">
+            <p class="font-semibold text-gray-900" data-en="Q2: Why Next.js?" data-bn="প্রশ্ন ২: Next.js কেন?">Q2: Why Next.js?</p>
+            <p class="text-gray-700 mt-1 text-xs" data-en="SSR for auth before page loads. App Router for file-based routing. Built-in API routes — no separate backend. One codebase for everything." data-bn="পেজ লোডের আগে প্রমাণীকরণের জন্য SSR। ফাইল-ভিত্তিক রাউটিংয়ের জন্য App Router। বিল্ট-ইন API রুট — আলাদা ব্যাকএন্ড নেই। সবকিছুর জন্য একটি কোডবেস।">SSR for auth before page loads. App Router for file-based routing. Built-in API routes — no separate backend. One codebase for everything.</p>
+        </div>
+        <div class="border border-gray-100 rounded-lg p-4">
+            <p class="font-semibold text-gray-900" data-en="Q3: Why Prisma?" data-bn="প্রশ্ন ৩: Prisma কেন?">Q3: Why Prisma?</p>
+            <p class="text-gray-700 mt-1 text-xs" data-en="Type safety (errors at compile time). Declarative relations (no JOINs). Auto migrations — change schema, run prisma migrate." data-bn="টাইপ নিরাপত্যা (কম্পাইল সময়ে ত্রুটি)। ঘোষণামূলক সম্পর্ক (JOIN নেই)। স্বয়ংক্রিয় মাইগ্রেশন — স্কিমা পরিবর্তন, prisma migrate চালান।">Type safety (errors at compile time). Declarative relations (no JOINs). Auto migrations — change schema, run prisma migrate.</p>
+        </div>
+        <div class="border border-gray-100 rounded-lg p-4">
+            <p class="font-semibold text-gray-900" data-en="Q4: How does auth work?" data-bn="প্রশ্ন ৪: প্রমাণীকরণ কীভাবে কাজ করে?">Q4: How does auth work?</p>
+            <p class="text-gray-700 mt-1 text-xs" data-en="Login → bcrypt verifies → JWT with {userId, email, role} → httpOnly cookie → layouts call requireRole() to check JWT + role." data-bn="লগইন → bcrypt যাচাই করে → {userId, email, role} সহ JWT → httpOnly কুকি → লেআউট requireRole() কল করে JWT + ভূমিকা পরীক্ষা করতে।">Login → bcrypt verifies → JWT with {userId, email, role} → httpOnly cookie → layouts call requireRole() to check JWT + role.</p>
+        </div>
+        <div class="border border-gray-100 rounded-lg p-4">
+            <p class="font-semibold text-gray-900" data-en="Q5: Server vs Client Components?" data-bn="প্রশ্ন ৫: সার্ভার বনাম ক্লায়েন্ট কম্পোনেন্ট?">Q5: Server vs Client Components?</p>
+            <p class="text-gray-700 mt-1 text-xs" data-en='Server: runs on server, no hooks, auth checks. Client: runs in browser with "use client", handles forms/state.' data-bn='সার্ভার: সার্ভারে চলে, হুক নেই, প্রমাণীকরণ পরীক্ষা। ক্লায়েন্ট: "use client" দিয়ে ব্রাউজারে চলে, ফর্ম/স্টেট পরিচালনা।'>Server: runs on server, no hooks, auth checks. Client: runs in browser with "use client", handles forms/state.</p>
+        </div>
+        <div class="border border-gray-100 rounded-lg p-4">
+            <p class="font-semibold text-gray-900" data-en="Q6: How are passwords stored?" data-bn="প্রশ্ন ৬: পাসওয়ার্ড কীভাবে সংরক্ষিত?">Q6: How are passwords stored?</p>
+            <p class="text-gray-700 mt-1 text-xs" data-en="Hashed with bcrypt (10 salt rounds). One-way — can't reverse. Login compares entered password with stored hash." data-bn="bcrypt দিয়ে হ্যাশ করা (১০টি সল্ট রাউন্ড)। এক-দিকমুখী — উল্টানো যায় না। লগইনে প্রবেশকৃত পাসওয়ার্ড সংরক্ষিত হ্যাশের সাথে তুলনা হয়।">Hashed with bcrypt (10 salt rounds). One-way — can't reverse. Login compares entered password with stored hash.</p>
+        </div>
+        <div class="border border-gray-100 rounded-lg p-4">
+            <p class="font-semibold text-gray-900" data-en="Q7: Hardest part?" data-bn="প্রশ্ন ৭: সবচেয়ে কঠিন অংশ?">Q7: Hardest part?</p>
+            <p class="text-gray-700 mt-1 text-xs" data-en="Appointment status state machine: PENDING → CONFIRMED → COMPLETED. Enforced in API + UI. Also: DB schema with proper relationships." data-bn="অ্যাপয়েন্টমেন্ট স্ট্যাটাস স্টেট মেশিন: PENDING → CONFIRMED → COMPLETED। API + UI-তে প্রয়োগ। এছাড়া: সঠিক সম্পর্ক সহ DB স্কিমা।">Appointment status state machine: PENDING → CONFIRMED → COMPLETED. Enforced in API + UI. Also: DB schema with proper relationships.</p>
+        </div>
+        <div class="border border-gray-100 rounded-lg p-4">
+            <p class="font-semibold text-gray-900" data-en="Q8: What to improve?" data-bn="প্রশ্ন ৮: কী উন্নতি করবেন?">Q8: What to improve?</p>
+            <p class="text-gray-700 mt-1 text-xs" data-en="(1) Middleware API auth for all endpoints. (2) Real-time notifications via WebSockets. (3) Password reset with email." data-bn="(১) সব এন্ডপয়েন্টের জন্য মিডলওয়্যার API প্রমাণীকরণ। (২) WebSockets দিয়ে রিয়েল-টাইম নোটিফিকেশন। (৩) ইমেইল সহ পাসওয়ার্ড রিসেট।">(1) Middleware API auth for all endpoints. (2) Real-time notifications via WebSockets. (3) Password reset with email.</p>
+        </div>
+    </div>
+</section>
+
+<!-- 10. DESIGN DECISIONS -->
+<section id="design" class="section-card border border-gray-200 rounded-xl p-6 md:p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4" data-en="10. Design Decisions" data-bn="১০. ডিজাইন সিদ্ধান্ত">10. Design Decisions</h2>
+    <div class="space-y-3 text-sm text-gray-700">
+        <div class="bg-gray-50 rounded-lg p-3 text-xs" data-en="<strong>JWT cookies over sessions?</strong> Stateless — no session store. Scales easily. httpOnly prevents JS access (safer than localStorage)." data-bn="<strong>সেশনের পরিবর্তে JWT কুকি?</strong> স্টেটলেস — কোনো সেশন স্টোর নেই। সহজে স্কেল হয়। httpOnly JS প্রবেশ রোধ করে (localStorage থেকে বেশি নিরাপদ)।"><strong>JWT cookies over sessions?</strong> Stateless — no session store. Scales easily. httpOnly prevents JS access (safer than localStorage).</div>
+        <div class="bg-gray-50 rounded-lg p-3 text-xs" data-en="<strong>Tailwind CSS?</strong> Rapid prototyping. Design system in config, applied everywhere. No CSS files." data-bn="<strong>Tailwind CSS?</strong> দ্রুত প্রোটোটাইপিং। কনফিগে ডিজাইন সিস্টেম, সর্বত্র প্রয়োগ। CSS ফাইল নেই।"><strong>Tailwind CSS?</strong> Rapid prototyping. Design system in config, applied everywhere. No CSS files.</div>
+        <div class="bg-gray-50 rounded-lg p-3 text-xs" data-en='<strong>Zod?</strong> Same validation client + server. Prevents bypassing client checks.' data-bn='<strong>Zod?</strong> ক্লায়েন্ট + সার্ভারে একই যাচাইকরণ। ক্লায়েন্ট পরীক্ষা এড়ানো রোধ করে।'><strong>Zod?</strong> Same validation client + server. Prevents bypassing client checks.</div>
+    </div>
+</section>
+
+<!-- 11. CHALLENGES -->
+<section id="challenges" class="section-card border border-gray-200 rounded-xl p-6 md:p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4" data-en="11. Challenges" data-bn="১১. চ্যালেঞ্জ">11. Challenges</h2>
+    <div class="space-y-2 text-xs text-gray-700">
+        <div class="flex items-start gap-2"><span class="text-brand-600">✓</span><p data-en="<strong>Stale State:</strong> useEffect didn't re-run → stale data. Fixed: proper dependency arrays." data-bn="<strong>পুরোনো স্টেট:</strong> useEffect পুনরায় চলেনি → পুরোনো ডাটা। সমাধান: সঠিক ডিপেন্ডেন্সি অ্যারে।"><strong>Stale State:</strong> useEffect didn't re-run → stale data. Fixed: proper dependency arrays.</p></div>
+        <div class="flex items-start gap-2"><span class="text-brand-600">✓</span><p data-en='<strong>JSON Corruption:</strong> Prescriptions → [object Object]. Fixed: explicit type checking before storing.' data-bn='<strong>JSON ক্ষতি:</strong> প্রেসক্রিপশন → [object Object]। সমাধান: সংরক্ষণের আগে স্পষ্ট টাইপ চেকিং।'><strong>JSON Corruption:</strong> Prescriptions → [object Object]. Fixed: explicit type checking before storing.</p></div>
+        <div class="flex items-start gap-2"><span class="text-brand-600">✓</span><p data-en="<strong>Missing Data Load:</strong> Function defined but never called → empty page. Fixed: useEffect to trigger fetch." data-bn="<strong>ডাটা লোড অনুপস্থিত:</strong> ফাংশন সংজ্ঞায়িত কিন্তু কল হয়নি → খালি পেজ। সমাধান: ফেচ ট্রিগার করতে useEffect।"><strong>Missing Data Load:</strong> Function defined but never called → empty page. Fixed: useEffect to trigger fetch.</p></div>
+        <div class="flex items-start gap-2"><span class="text-brand-600">✓</span><p data-en="<strong>Auth Guard Bug:</strong> Returned email as name. Fixed: DB lookup in requireRole() for real fullName." data-bn="<strong>অথ গার্ড বাগ:</strong> নামের পরিবর্তে ইমেইল ফিরিয়ে দিয়েছে। সমাধান: প্রকৃত fullName-এর জন্য requireRole()-তে DB লুকআপ।"><strong>Auth Guard Bug:</strong> Returned email as name. Fixed: DB lookup in requireRole() for real fullName.</p></div>
+    </div>
+</section>
+
+<!-- 12. FUTURE -->
+<section id="future" class="section-card border border-gray-200 rounded-xl p-6 md:p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4" data-en="12. Future Scope" data-bn="১২. ভবিষ্যৎ পরিকল্পনা">12. Future Scope</h2>
+    <div class="grid md:grid-cols-2 gap-2 text-xs text-gray-700">
+        <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>API Middleware Auth</strong> — Protect all endpoints at network level." data-bn="<strong>API মিডলওয়্যার প্রমাণীকরণ</strong> — নেটওয়ার্ক স্তরে সব এন্ডপয়েন্ট সুরক্ষিত করুন।"><strong>API Middleware Auth</strong> — Protect all endpoints at network level.</div>
+        <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>Real-time Notifications</strong> — WebSockets for instant appointment updates." data-bn="<strong>রিয়েল-টাইম নোটিফিকেশন</strong> — তাৎক্ষণিক অ্যাপয়েন্টমেন্ট আপডেটের জন্য WebSockets।"><strong>Real-time Notifications</strong> — WebSockets for instant appointment updates.</div>
+        <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>Email Integration</strong> — Appointment confirmations and reminders via email." data-bn="<strong>ইমেইল ইন্টিগ্রেশন</strong> — ইমেইলের মাধ্যমে অ্যাপয়েন্টমেন্ট নিশ্চয়তা এবং রিমাইন্ডার।"><strong>Email Integration</strong> — Appointment confirmations and reminders via email.</div>
+        <div class="bg-gray-50 rounded-lg p-3" data-en="<strong>Mobile App</strong> — React Native companion for patients." data-bn="<strong>মোবাইল অ্যাপ</strong> — রোগীদের জন্য React Native সঙ্গী অ্যাপ।"><strong>Mobile App</strong> — React Native companion for patients.</div>
+    </div>
+</section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="border-t border-gray-200 py-6 text-center text-xs text-gray-400">
+    <p>HospiTrack — Built with Next.js, Prisma, PostgreSQL, Tailwind CSS</p>
+</footer>
+
+<!-- BANGLA TRANSLATION SCRIPT -->
+<script>
+let currentLang = 'en';
+
+function toggleLang() {
+    currentLang = currentLang === 'en' ? 'bn' : 'en';
+    document.getElementById('langLabel').textContent = currentLang === 'en' ? 'Translate to Bangla' : 'ইংরেজিতে পরিবর্তন করুন';
+    document.documentElement.lang = currentLang === 'bn' ? 'bn' : 'en';
+    document.querySelectorAll('[data-en]').forEach(el => {
+        const text = el.getAttribute('data-' + currentLang);
+        if (text) {
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                el.placeholder = text;
+            } else {
+                el.textContent = text;
+            }
+        }
+    });
+}
+</script>
+
+</body>
+</html>

@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { serverErrorResponse } from "@/lib/api-validate";
 
 export async function DELETE(
   _request: NextRequest,
@@ -16,7 +17,7 @@ export async function DELETE(
     const department = await prisma.department.findUnique({ where: { id } });
     if (!department) {
       return NextResponse.json(
-        { error: { message: "Department not found" } },
+        { data: null, error: { message: "Department not found" } },
         { status: 404 }
       );
     }
@@ -25,7 +26,6 @@ export async function DELETE(
 
     return NextResponse.json({ data: { id }, error: null });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to delete department";
-    return NextResponse.json({ error: { message } }, { status: 500 });
+    return serverErrorResponse(err);
   }
 }

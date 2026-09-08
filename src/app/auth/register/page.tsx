@@ -35,9 +35,6 @@ const registerSchema = z
         "Password must contain at least one uppercase letter, one lowercase letter, and one number"
       ),
     confirmPassword: z.string().min(1, "Please confirm your password"),
-    role: z.enum(["PATIENT", "DOCTOR"], {
-      required_error: "Please select a role",
-    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -56,8 +53,6 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -67,11 +62,8 @@ export default function RegisterPage() {
       phone: "",
       password: "",
       confirmPassword: "",
-      role: "PATIENT",
     },
   });
-
-  const selectedRole = watch("role");
 
   const onSubmit = async (data: RegisterFormValues) => {
     setAuthError(null);
@@ -87,14 +79,14 @@ export default function RegisterPage() {
           password: data.password,
           fullName: data.fullName,
           phone: data.phone || null,
-          role: data.role,
+          role: "PATIENT",
         }),
       });
 
       const json = await res.json();
 
       if (!res.ok) {
-        const message = json.error || "Registration failed. Please try again.";
+        const message = json.error?.message || "Registration failed. Please try again.";
 
         if (message.includes("already exists")) {
           showError("Registration failed", "An account with this email already exists. Please sign in instead.");
@@ -130,23 +122,6 @@ export default function RegisterPage() {
     }
   };
 
-  const roleOptions = [
-    {
-      value: "PATIENT" as const,
-      label: "Patient",
-      icon: "🧑‍🤝‍🧑",
-      description: "Book appointments and view your medical records",
-      gradient: "from-primary-400 to-primary-600",
-    },
-    {
-      value: "DOCTOR" as const,
-      label: "Doctor",
-      icon: "👨‍⚕️",
-      description: "Manage patient records and appointments",
-      gradient: "from-primary-500 to-primary-700",
-    },
-  ];
-
   return (
     <div className="w-full">
       <h2 className="text-center text-2xl font-bold text-secondary-900">
@@ -155,7 +130,10 @@ export default function RegisterPage() {
       <p className="mt-2 text-center text-sm text-secondary-500">
         Join HospiTrack and get started today
       </p>
-
+      <p className="mt-1 text-center text-xs text-secondary-400">
+        Patient sign-up only — doctor accounts are created by the hospital
+        administrator.
+      </p>
       {/* Success Message */}
       {successMessage && (
         <div className="mt-6 flex items-start gap-3 rounded-lg border border-success-500/20 bg-success-50 p-4">
@@ -209,71 +187,6 @@ export default function RegisterPage() {
         className="mt-8 space-y-5"
         noValidate
       >
-        {/* Role Selection */}
-        <div>
-          <label className="mb-3 block text-sm font-medium text-secondary-700">
-            I am a...
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            {roleOptions.map((role) => (
-              <button
-                key={role.value}
-                type="button"
-                onClick={() => setValue("role", role.value)}
-                className={`relative overflow-hidden rounded-xl border-2 p-4 text-center transition-all duration-200 ${
-                  selectedRole === role.value
-                    ? "border-primary-500 bg-primary-50 shadow-sm"
-                    : "border-secondary-200 bg-white hover:border-secondary-300 hover:bg-secondary-50"
-                }`}
-              >
-                {/* Active gradient bar */}
-                {selectedRole === role.value && (
-                  <div
-                    className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${role.gradient}`}
-                  />
-                )}
-                <div className="text-3xl">{role.icon}</div>
-                <div
-                  className={`mt-2 text-sm font-semibold ${
-                    selectedRole === role.value
-                      ? "text-primary-700"
-                      : "text-secondary-700"
-                  }`}
-                >
-                  {role.label}
-                </div>
-                <div className="mt-0.5 text-xs text-secondary-500">
-                  {role.description}
-                </div>
-
-                {/* Selected checkmark */}
-                {selectedRole === role.value && (
-                  <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary-500">
-                    <svg
-                      className="h-3 w-3 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={3}
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="m4.5 12.75 6 6 9-13.5"
-                      />
-                    </svg>
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-          {errors.role && (
-            <p className="mt-1.5 text-sm text-danger-500">
-              {errors.role.message}
-            </p>
-          )}
-        </div>
-
         {/* Full Name */}
         <div>
           <label

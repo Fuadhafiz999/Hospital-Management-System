@@ -55,12 +55,18 @@ export async function PATCH(request: NextRequest) {
     const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
 
     if (!token) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { data: null, error: { message: "Not authenticated" } },
+        { status: 401 }
+      );
     }
 
     const payload = verifyToken(token);
     if (!payload) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { data: null, error: { message: "Not authenticated" } },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
@@ -68,7 +74,7 @@ export async function PATCH(request: NextRequest) {
 
     if (full_name !== undefined && (typeof full_name !== "string" || full_name.trim().length < 2)) {
       return NextResponse.json(
-        { error: "Full name must be at least 2 characters" },
+        { data: null, error: { message: "Full name must be at least 2 characters" } },
         { status: 400 }
       );
     }
@@ -78,7 +84,10 @@ export async function PATCH(request: NextRequest) {
     if (phone !== undefined) data.phone = phone || null;
 
     if (Object.keys(data).length === 0) {
-      return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+      return NextResponse.json(
+        { data: null, error: { message: "No fields to update" } },
+        { status: 400 }
+      );
     }
 
     const user = await prisma.user.update({

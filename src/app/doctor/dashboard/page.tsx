@@ -242,9 +242,7 @@ export default function DoctorDashboardPage() {
       <Header
         title="Doctor Dashboard"
         subtitle={`${doctorName || "Loading..."}${specialization ? ` — ${specialization}` : ""}`}
-        userName={doctorName || "Doctor"}
-        userRole="doctor"
-        showSearch={false}
+        showSearch={true}
       />
 
       <div className="page-container space-y-6">
